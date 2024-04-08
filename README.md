@@ -1,7 +1,9 @@
 # homebridge-eufy-robovac
 Homebridge plugin for Eufy RoboVac
 
-Fork of [apexad/homebridge-eufy-robovac](https://github.com/apexad/homebridge-eufy-robovac) to attempt a big refactor with the hope of fixing issue [#34](https://github.com/apexad/homebridge-eufy-robovac/issues/34).
+### About this Fork
+
+A big refactor of [apexad/homebridge-eufy-robovac](https://github.com/apexad/homebridge-eufy-robovac) to improve performance ([#34](https://github.com/apexad/homebridge-eufy-robovac/issues/34)) and repair broken features, like the "Find Robot" switch.
 
 ### Features
 

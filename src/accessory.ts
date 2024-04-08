@@ -59,7 +59,7 @@ export class EufyRobovacAccessory {
       .onGet(this.getRunning.bind(this))
       .onSet(this.setRunning.bind(this));
 
-    console.log(this.vacuumService.getCharacteristic(this.platform.Characteristic.Name).value)
+    console.log("---LOOK AT ME---", this.vacuumService.getCharacteristic(this.platform.Characteristic.Name).value)
 
     // create find robot service
     if (!this.hideFindButton) {
@@ -187,7 +187,7 @@ export class EufyRobovacAccessory {
     }
     if (this.errorSensorService && statusResponse.dps[StatusDps.ERROR_CODE] !== undefined) {
       this.log.debug(`updating Error Sensor status for ${this.name} to ${statusResponse.dps[StatusDps.ERROR_CODE]}`);
-      this.errorSensorService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
+      this.errorSensorService.updateCharacteristic(this.platform.Characteristic.MotionDetected, statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
       counter++;
     }
     this.log.info(`New data from ${this.name} received - updated ${counter} characteristics.`)

@@ -1,7 +1,7 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 
 import { EufyRobovacPlatform } from './platform';
-import { ErrorCode, RoboVac, StatusDps, StatusResponse, statusDpsFriendlyNames } from './robovac-api';
+import { ErrorCode, RoboVac, StatusDps, StatusResponse, getErrorCodeFriendlyName, statusDpsFriendlyNames } from './robovac-api';
 import { Logger } from './consoleLogger';
 
 export class EufyRobovacAccessory {
@@ -58,8 +58,6 @@ export class EufyRobovacAccessory {
     this.vacuumService.getCharacteristic(this.platform.Characteristic.On)
       .onGet(this.getRunning.bind(this))
       .onSet(this.setRunning.bind(this));
-
-    console.log("---LOOK AT ME---", this.vacuumService.getCharacteristic(this.platform.Characteristic.Name).value)
 
     // create find robot service
     if (!this.hideFindButton) {
@@ -188,6 +186,7 @@ export class EufyRobovacAccessory {
     if (this.errorSensorService && statusResponse.dps[StatusDps.ERROR_CODE] !== undefined) {
       this.log.debug(`updating Error Sensor status for ${this.name} to ${statusResponse.dps[StatusDps.ERROR_CODE]}`);
       this.errorSensorService.updateCharacteristic(this.platform.Characteristic.MotionDetected, statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
+      this.log.info(`${this.name} reported a device error: ${getErrorCodeFriendlyName(statusResponse.dps[StatusDps.ERROR_CODE])}`);
       counter++;
     }
     this.log.info(`New data from ${this.name} received - updated ${counter} characteristics.`)

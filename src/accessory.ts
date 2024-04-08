@@ -259,9 +259,10 @@ export class EufyRobovacAccessory {
       }
     }
     if (this.errorSensorService && statusResponse.dps[StatusDps.ERROR_CODE] !== undefined) {
-      this.log.debug(`updating Error Sensor status for ${this.name} to ${statusResponse.dps[StatusDps.ERROR_CODE]}`);
-      this.errorSensorService.updateCharacteristic(this.platform.Characteristic.MotionDetected, statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
-      this.log.info(`${this.name} reported a device error: ${getErrorCodeFriendlyName(statusResponse.dps[StatusDps.ERROR_CODE])}`);
+      let is_error = (statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
+      this.log.debug(`updating Error Sensor status for ${this.name} to ${is_error}`);
+      this.errorSensorService.updateCharacteristic(this.platform.Characteristic.MotionDetected, is_error);
+      if (is_error) this.log.info(`${this.name} reported a device error: ${getErrorCodeFriendlyName(statusResponse.dps[StatusDps.ERROR_CODE])}`);
       counter++;
     }
     this.log.info(`New data from ${this.name} received - updated ${counter} characteristics.`)

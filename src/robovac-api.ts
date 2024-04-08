@@ -97,7 +97,7 @@ export enum WorkStatus {
     // In the dock, charging
     CHARGING = 'Charging',
     // In the dock, full charged
-    COMPLETED = 'completed',
+    CHARGING_COMPLETED = 'completed',
     // Going home because battery is depleted or home was pressed
     RECHARGE_NEEDED = 'Recharge'
 }
@@ -119,6 +119,23 @@ export enum ErrorCode {
     S_BRUSH_STUCK = 'S_brush_stuck',
     FAN_STUCK = 'Fan_stuck',
     R_BRUSH_STUCK = 'R_brush_stuck'
+}
+
+export const errorCodeFriendlyNames = new Map<string, string>([
+    [ErrorCode.NO_ERROR, "No Error"],
+    [ErrorCode.STUCK_5_MIN, "Stuck (5 Minutes)"],
+    [ErrorCode.CRASH_BAR_STUCK, "Crash Bar Stuck"],
+    [ErrorCode.SENSOR_DIRTY, "Sensor Dirty"],
+    [ErrorCode.NOT_ENOUGH_POWER, "Not Enough Power"],
+    [ErrorCode.WHEEL_STUCK, "Wheel Stuck"],
+    [ErrorCode.S_BRUSH_STUCK, "Brush Stuck"],
+    [ErrorCode.FAN_STUCK, "Fan Stuck"],
+    [ErrorCode.R_BRUSH_STUCK, "Brush Stuck"]
+]
+);
+
+export function getErrorCodeFriendlyName(errorCode: string) {
+    return errorCodeFriendlyNames.get(errorCode) ?? errorCode;
 }
 
 export class RoboVac {

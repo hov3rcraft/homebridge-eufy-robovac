@@ -166,7 +166,21 @@ export class RoboVac {
         });
 
         this.api.on('dp-refresh', (data: any) => {
-            log.debug('DP_REFRESH data from device: ', data);
+            if (this.consoleDebugLog) {
+                try {
+                    this.log.debug("Received dps refresh data from device:", "\n" + formatStatusResponse(data));
+                } catch (e) {
+                    this.log.debug("Received dps refresh data from device:", data)
+                }
+            } else {
+                this.log.debug("Received dps refresh data from device:", data)
+            }
+
+            if (data.dps) {
+                Object.assign(this.lastStatus, data);
+                this.lastStatusUpdate = new Date();
+                dataReceivedCallback(data);
+            }
         });
 
         this.api.on('data', (data: any) => {
@@ -207,7 +221,9 @@ export class RoboVac {
         this.lastStatusValid = false;
         this.ongoingStatusUpdate = null;
 
-        this.connect();
+        this.connect().catch((e) => {
+            this.log.error("Error during initial connect:", e);
+        });
     }
 
     async connect(): Promise<void> {
@@ -253,16 +269,16 @@ export class RoboVac {
 
     async getStatusFromDevice(): Promise<RobovacStatus> {
         this.log.info("Fetching status update...");
-        if (!this.api.isConnected()) {
-            await this.connect();
-        }
-
         try {
+            if (!this.api.isConnected()) {
+                await this.connect();
+            }
+
             var schema = await this.api.get({ schema: true });
             this.lastStatus = schema;
             this.lastStatusUpdate = new Date();
             this.ongoingStatusUpdate = null;
-            this.log.info("Status update retrieved.")
+            this.log.debug("Status update retrieved.")
             return this.lastStatus;
         } catch (e) {
             this.log.error("An error occurred (during GET status update)!", e);
@@ -276,12 +292,12 @@ export class RoboVac {
 
     async set(dps: StatusDps, newValue: any) {
         this.log.debug("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "...");
-        if (!this.api.isConnected()) {
-            await this.connect();
-        }
-
         try {
-            await this.api.this.api.set({ dps: dps, set: newValue });
+            if (!this.api.isConnected()) {
+                await this.connect();
+            }
+
+            await this.api.set({ dps: dps, set: newValue });
             this.log.info("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "successful.");
         } catch (e) {
             this.log.error("An error occurred! (during SET of", statusDpsFriendlyNames.get(dps), "to", newValue, "): ", e);

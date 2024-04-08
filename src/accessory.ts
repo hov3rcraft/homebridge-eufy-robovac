@@ -19,11 +19,11 @@ export class EufyRobovacAccessory {
 
 
   private readonly callbackTimeout = 3000;
-  private readonly cachingDuration: number = 15000;
+  private readonly cachingDuration: number = 60000;
 
   constructor(platform: EufyRobovacPlatform, accessory: PlatformAccessory, config: any, log: Logger) {
 
-    log.info(`Eufy Robovac starting`);
+    log.debug('Initializing EufyRobovacAccessory...');
 
     this.platform = platform;
     this.accessory = accessory;
@@ -60,36 +60,27 @@ export class EufyRobovacAccessory {
 
 
     this.roboVac = new RoboVac(this.connectionConfig, this.updateCharacteristics.bind(this), this.cachingDuration, this.log);
+
+    this.log.info('Finished initializing accessory:', this.name);
   }
 
   /**
    * Handle the "GET" requests from HomeKit
    * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
    */
-  getRunning() {
+  async getRunning(): Promise<CharacteristicValue> {
     this.log.debug(`getRunning for ${this.name}`);
 
-    let cachedRunning = this.roboVac.getRunningCached();
-
-    return false;
-
-    /**
-     * Promise.race([
-      this.roboVac.getRunning(),
-      new Promise<CharacteristicValue>((resolve, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-      })
-    ]).catch(() => {
-      this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-    });
-
-    if (cachedRunning) {
-      return cachedRunning;
-    } else {
+    try {
+      return await Promise.race([
+        this.roboVac.getRunning(),
+        new Promise<CharacteristicValue>((resolve, reject) => {
+          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
+        })
+      ]);
+    } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    
-     */
   }
 
   /**
@@ -98,19 +89,17 @@ export class EufyRobovacAccessory {
    */
   async setRunning(state: CharacteristicValue) {
     this.log.debug(`setRunning for ${this.name} set to ${state}`);
-    return Promise.race([
-      new Promise<void>((resolve, reject) => {
-        let task = (state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true);
-        task.then(() => {
-          resolve();
-        }).catch(() => {
-          reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-        });
-      }),
-      new Promise<void>((resolve, reject) => {
-        setTimeout(() => reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)), this.callbackTimeout);
-      }),
-    ]);
+
+    try {
+      return await Promise.race([
+        (state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true),
+        new Promise<CharacteristicValue>((resolve, reject) => {
+          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
+        })
+      ]);
+    } catch {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
   }
 
   /**
@@ -124,7 +113,7 @@ export class EufyRobovacAccessory {
     this.log.debug(`updateCharacteristics for ${this.name}`);
     var counter = 0;
     if (statusResponse.dps[StatusDps.RUNNING] !== undefined) {
-      this.log.info(`updating RUNNING for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
+      this.log.debug(`updating RUNNING for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
       this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
       counter++;
     }

@@ -16,7 +16,7 @@ export class EufyRobovacPlatform implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
 
   constructor(log: Logger, config: PlatformConfig, api: API,) {
-    this.log = config.debugLog ? new ConsoleLogger(0, "homebridge-eufy-robovac:") : log;
+    this.log = config.debugLogEnabled ? new ConsoleLogger(0, "homebridge-eufy-robovac:") : log;
     this.config = config;
     this.api = api;
 

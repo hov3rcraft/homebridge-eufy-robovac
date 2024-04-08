@@ -17,9 +17,9 @@ export class EufyRobovacAccessory {
 
   private readonly name: string;
   private readonly connectionConfig: { deviceId: string; localKey: string; deviceIp: string };
-  private readonly hideFindButton: boolean;
-  private readonly hideBatteryInformation: boolean;
-  private readonly hideErrorSensor: boolean;
+  private readonly findButtonEnabled: boolean;
+  private readonly batteryInformationEnabled: boolean;
+  private readonly errorSensorEnabled: boolean;
 
 
   private readonly callbackTimeout = 3000;
@@ -40,9 +40,9 @@ export class EufyRobovacAccessory {
       localKey: config.localKey,
       deviceIp: config.deviceIp
     };
-    this.hideFindButton = config.hideFindButton;
-    this.hideBatteryInformation = config.hideBatteryInformation;
-    this.hideErrorSensor = config.hideErrorSensor;
+    this.findButtonEnabled = config.findButtonEnabled;
+    this.batteryInformationEnabled = config.batteryInformationEnabled;
+    this.errorSensorEnabled = config.errorSensorEnabled;
 
     // set accessory information
     this.informationService = this.accessory.getService(this.platform.Service.AccessoryInformation)!;
@@ -64,7 +64,7 @@ export class EufyRobovacAccessory {
       .onSet(this.setRunning.bind(this));
 
     // create find robot service
-    if (!this.hideFindButton) {
+    if (this.findButtonEnabled) {
       this.findRobotService = this.accessory.getService("FindRobot") || this.accessory.addService(this.platform.Service.Switch, "FindRobot", "FIND_ROBOT");
       this.findRobotService.getCharacteristic(this.platform.Characteristic.On)
         .onGet(this.getFindRobot.bind(this))
@@ -72,7 +72,7 @@ export class EufyRobovacAccessory {
     }
 
     // create battery service
-    if (!this.hideBatteryInformation) {
+    if (this.batteryInformationEnabled) {
       this.batteryService = this.accessory.getService("Battery") || this.accessory.addService(this.platform.Service.Battery, "Battery", "BATTERY");
       this.batteryService.getCharacteristic(this.platform.Characteristic.StatusLowBattery)
         .onGet(this.getLowBattery.bind(this));
@@ -83,7 +83,7 @@ export class EufyRobovacAccessory {
     }
 
     // create error sensor service
-    if (!this.hideErrorSensor) {
+    if (this.errorSensorEnabled) {
       this.errorSensorService = this.accessory.getService("ErrorSensor") || this.accessory.addService(this.platform.Service.MotionSensor, "ErrorSensor", "ERROR_SENSOR");
       this.errorSensorService.getCharacteristic(this.platform.Characteristic.MotionDetected)
         .onGet(this.getErrorStatus.bind(this))

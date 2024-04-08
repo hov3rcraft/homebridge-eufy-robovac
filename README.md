@@ -15,41 +15,53 @@ A big refactor of [apexad/homebridge-eufy-robovac](https://github.com/apexad/hom
 
 * Find robot
 
+### Get Device ID & Local Key
+To access your RoboVac, you need both the `deviceId`/`localKey`.
+To get the `deviceId`/`localKey` use the [`eufy-clean-local-key-grabber`](https://github.com/Rjevski/eufy-clean-local-key-grabber/tree/master) repository.
+
 ### Configuration
 This easiest way to use this plugin is to use [homebridge-config-ui-x](https://www.npmjs.com/package/homebridge-config-ui-x).  
-To configure manually, add to the `accessories` section of homebridge's `config.json` after installing the plugin.
+To configure manually, add to the `platform` section of homebridge's `config.json` after installing the plugin.
 
 **Command:** ```npm install -g homebridge-eufy-robovac```
 
 **Config:**
   ```json
     {
-      "accessory": "Eufy RoboVac",
-      "name": "Vacuum Cleaner",
-      "deviceId": "<deviceId/devId>",
-      "localKey": "<localKey>",
-      "hideFindButton": "<true | false, defaults to false>",
-      "hideErrorSensor": "<true | false, defaults to false>",
-      "useSwitchService": "<true | false, defaults to false>",
-      "debugLog": "<true | false, defaults to false>"
+      "devices": [
+        {
+          "name": "<deviceName, required>",
+          "deviceId": "<deviceId, required>",
+          "localKey": "<localKey, required>",
+          "deviceIp": "<deviceIp, defaults to undefined>",
+          "useSwitchService": "<true | false, defaults to false>",
+          "findButtonEnabled": "<true | false, defaults to true>",
+          "batteryInformationEnabled": "<true | false, defaults to true>",
+          "errorSensorEnabled": "<true | false, defaults to true>"
+        }
+      ],
+      "debugLog": "<true | false, defaults to false>",
+      "platform": "EufyRobovac"
     }
   ``` 
-You can find out more about the `deviceId`/`localKey` [here](https://github.com/joshstrange/eufy-robovac)
 
-Eufy RoboVac will be added to Home app a fan accessory (since HomeKit does not natively support vacuums).  
-If `hideFindButton` is not supplied or set to false, a switch that performs the 'Find' function will also be added.  
-If `hideErrorSensor` is not supplied or set to false, a Motion Sensor that is active when the vacuum has an error will also be added.  
-If `useSwitchService` is true, main Vacuum will be a switch instead of fan.  
-if `debugLog` is enabled (set to true), the underlying library will outut many logs.
+You can add multiple RoboVacs under `devices`.
+* `deviceName`: Give each device a unique name.
+* `deviceId`/`localKey`: Required to access your device's API (see instructions above).
+* `deviceIp`: If your device has a static IP, enter it here to improve performance.
+* `useSwitchService`: By default, RoboVac will be added to Home app as a fan accessory (since HomeKit does not natively support vacuums). If set to true, a Switch accessory will be used instead.
+* `findButtonEnabled`: If set to true, a switch that performs the 'Find Robot' function will also be added.  
+* `batteryInformationEnabled`: If set to true, the device will show information about the battery charge level and charging status.
+* `errorSensorEnabled`: If set to true, a motion sensor that reacts to the device's error messages will also be added. Also, the devices error messages will be logged to HomeBridge.
 
-### Get Device ID & Local Key
-
-To get the `deviceId`/`localKey` use the [`eufy-clean-local-key-grabber`](https://github.com/Rjevski/eufy-clean-local-key-grabber/tree/master) repository.
+* `debugLog`: Diverts the log messages for all log levels directly to the console.
+* `platform`: Tells Homebridge that this platform config belongs to this plugin. Do not change. 
 
 ### Thank You
 
 * [mitchellrj](https://github.com/mitchellrj) - Did most of the legwork in figuring out how to talk to the Eufy
 * [seikan](https://github.com/seikan) - Provided a [great example](https://github.com/seikan/homebridge-xiaomi-mi-robot-vacuum) for how to expose a vacuum cleaner in homebridge/homekit
+* [apexad](https://github.com/apexad) - Created the [original version](https://github.com/apexad/homebridge-eufy-robovac) of the plugin.
 
 
 ## Development

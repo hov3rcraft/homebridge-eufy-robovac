@@ -97,7 +97,7 @@ export enum WorkStatus {
     // In the dock, charging
     CHARGING = 'Charging',
     // In the dock, full charged
-    COMPLETED = 'completed',
+    CHARGING_COMPLETED = 'completed',
     // Going home because battery is depleted or home was pressed
     RECHARGE_NEEDED = 'Recharge'
 }

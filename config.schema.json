@@ -37,6 +37,18 @@
               "required": false,
               "default": "test"
             },
+            "useSwitchService": {
+              "title": "Use Switch for Vacuum (Default is Fan)",
+              "type": "boolean",
+              "required": false,
+              "default": false
+            },
+            "hideBatteryInformation": {
+              "title": "Hide Battery and Charging Information",
+              "type": "boolean",
+              "required": false,
+              "default": false
+            },
             "hideFindButton": {
               "title": "Hide Find Button",
               "type": "boolean",
@@ -45,12 +57,6 @@
             },
             "hideErrorSensor": {
               "title": "Hide Error Sensor",
-              "type": "boolean",
-              "required": false,
-              "default": false
-            },
-            "useSwitchService": {
-              "title": "Use Switch for Vacuum (Default is Fan)",
               "type": "boolean",
               "required": false,
               "default": false

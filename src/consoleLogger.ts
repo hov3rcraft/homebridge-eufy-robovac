@@ -16,7 +16,7 @@ export class ConsoleLogger implements Logger {
     }
 
     log(message: string, ...parameters: any[]): void {
-        var fullMessage = (this.prefix) ? message : this.prefix + " " + message;
+        const fullMessage = (this.prefix) ? message : this.prefix + " " + message;
         console.log(fullMessage, ...parameters)
     }
 

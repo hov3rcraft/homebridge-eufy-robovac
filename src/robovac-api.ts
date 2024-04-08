@@ -1,6 +1,6 @@
 import { ConsoleLogger, Logger } from "./consoleLogger"
 
-const TuyAPI = require('tuyapi');
+import TuyAPI from 'tuyapi';
 
 export enum StatusDps {
     DEFAULT = '1',
@@ -62,10 +62,10 @@ export interface RobovacStatus {
 }
 
 export function formatStatusResponse(statusResponse: StatusResponse): string {
-    var formattedStatus = `-- Status Start --\n`
-    for (var dps of Object.values(StatusDps)) {
-        if (statusResponse.dps.hasOwnProperty(dps)) {
-            formattedStatus += `- ${statusDpsFriendlyNames.get(dps)}: ${(statusResponse.dps as any)[dps]}\n`
+    let formattedStatus = `-- Status Start --\n`
+    for (const dps of Object.values(StatusDps)) {
+        if (dps in statusResponse.dps) {
+            formattedStatus += `- ${statusDpsFriendlyNames.get(dps)}: ${(statusResponse.dps)[dps]}\n`
         }
     }
     formattedStatus += `-- Status End --`
@@ -139,7 +139,7 @@ export function getErrorCodeFriendlyName(errorCode: string) {
 }
 
 export class RoboVac {
-    api: any;
+    api: TuyAPI;
     directConnect: boolean;
     lastStatus: RobovacStatus;
     lastStatusUpdate: Date;
@@ -163,7 +163,7 @@ export class RoboVac {
         this.api = new TuyAPI({
             id: config.deviceId,
             key: config.localKey,
-            ip: this.directConnect ? config.deviceIp : null,
+            ip: this.directConnect ? config.deviceIp : undefined,
             version: '3.3',
             issueRefreshOnConnect: true
         });
@@ -291,8 +291,8 @@ export class RoboVac {
                 await this.connect();
             }
 
-            var schema = await this.api.get({ schema: true });
-            this.lastStatus = schema;
+            const schema = await this.api.get({ schema: true });
+            this.lastStatus = schema as RobovacStatus;
             this.lastStatusUpdate = new Date();
             this.ongoingStatusUpdate = null;
             this.log.debug("Status update retrieved.")
@@ -301,7 +301,7 @@ export class RoboVac {
             this.log.error("An error occurred (during GET status update)!", e);
             try {
                 this.disconnect()
-            } catch (e) {
+            } catch (e2) {
             }
             throw e;
         }
@@ -314,13 +314,13 @@ export class RoboVac {
                 await this.connect();
             }
 
-            await this.api.set({ dps: dps, set: newValue });
+            await this.api.set({ dps: parseInt(dps), set: newValue });
             this.log.info("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "successful.");
         } catch (e) {
             this.log.error("An error occurred! (during SET of", statusDpsFriendlyNames.get(dps), "to", newValue, "): ", e);
             try {
                 this.disconnect()
-            } catch (e) {
+            } catch (e2) {
             }
             throw e;
         }

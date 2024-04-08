@@ -1,4 +1,4 @@
-import { Service, PlatformAccessory, CharacteristicValue, Characteristic } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 
 import { EufyRobovacPlatform } from './platform';
 import { ErrorCode, RoboVac, StatusDps, StatusResponse, WorkStatus, getErrorCodeFriendlyName, statusDpsFriendlyNames } from './robovac-api';
@@ -16,7 +16,7 @@ export class EufyRobovacAccessory {
   private readonly log: Logger;
 
   private readonly name: string;
-  private readonly connectionConfig: { deviceId: any; localKey: any; deviceIp: string };
+  private readonly connectionConfig: { deviceId: string; localKey: string; deviceIp: string };
   private readonly hideFindButton: boolean;
   private readonly hideBatteryInformation: boolean;
   private readonly hideErrorSensor: boolean;
@@ -132,7 +132,7 @@ export class EufyRobovacAccessory {
     this.log.debug(`getLowBattery for ${this.name}`);
 
     try {
-      let battery_level = await Promise.race([
+      const battery_level = await Promise.race([
         this.roboVac.getBatteryLevel(),
         new Promise<number>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
@@ -163,7 +163,7 @@ export class EufyRobovacAccessory {
     this.log.debug(`getCharging for ${this.name}`);
 
     try {
-      let work_status = await Promise.race([
+      const work_status = await Promise.race([
         this.roboVac.getWorkStatus(),
         new Promise<WorkStatus>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
@@ -179,7 +179,7 @@ export class EufyRobovacAccessory {
     this.log.debug(`getErrorStatus for ${this.name}`);
 
     try {
-      let error_code = await Promise.race([
+      const error_code = await Promise.race([
         this.roboVac.getErrorCode(),
         new Promise<string>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
@@ -234,7 +234,7 @@ export class EufyRobovacAccessory {
 
   updateCharacteristics(statusResponse: StatusResponse) {
     this.log.debug(`updateCharacteristics for ${this.name}`);
-    var counter = 0;
+    let counter = 0;
     if (statusResponse.dps[StatusDps.RUNNING] !== undefined) {
       this.log.debug(`updating ${statusDpsFriendlyNames.get(StatusDps.RUNNING)} for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
       this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
@@ -259,7 +259,7 @@ export class EufyRobovacAccessory {
       }
     }
     if (this.errorSensorService && statusResponse.dps[StatusDps.ERROR_CODE] !== undefined) {
-      let is_error = (statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
+      const is_error = (statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
       this.log.debug(`updating Error Sensor status for ${this.name} to ${is_error}`);
       this.errorSensorService.updateCharacteristic(this.platform.Characteristic.MotionDetected, is_error);
       if (is_error) this.log.info(`${this.name} reported a device error: ${getErrorCodeFriendlyName(statusResponse.dps[StatusDps.ERROR_CODE])}`);

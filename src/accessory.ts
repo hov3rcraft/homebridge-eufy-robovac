@@ -73,7 +73,7 @@ export class EufyRobovacAccessory {
 
     // create battery service
     if (!this.hideBatteryInformation) {
-      this.batteryService = this.accessory.getService("Battery") || this.accessory.addService(this.platform.Service.Switch, "Battery", "BATTERY");
+      this.batteryService = this.accessory.getService("Battery") || this.accessory.addService(this.platform.Service.Battery, "Battery", "BATTERY");
       this.batteryService.getCharacteristic(this.platform.Characteristic.StatusLowBattery)
         .onGet(this.getLowBattery.bind(this));
       this.batteryService.getCharacteristic(this.platform.Characteristic.BatteryLevel)

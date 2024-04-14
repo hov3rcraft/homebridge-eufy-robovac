@@ -17,25 +17,23 @@
               "title": "Name",
               "type": "string",
               "default": "Vacuum Cleaner",
-              "required": false
+              "required": true
             },
             "deviceId": {
               "title": "Device ID",
               "type": "string",
-              "required": true,
-              "default": "test"
+              "required": true
             },
             "localKey": {
               "title": "Local Key",
               "type": "string",
-              "required": true,
-              "default": "test"
+              "required": true
             },
             "deviceIp": {
               "title": "Device IP",
+              "description": "If your device has a static IP, enter it here to improve performance.",
               "type": "string",
-              "required": false,
-              "default": "test"
+              "required": false
             },
             "useSwitchService": {
               "title": "Use Switch for Vacuum (Default is Fan)",
@@ -43,29 +41,30 @@
               "required": false,
               "default": false
             },
-            "hideBatteryInformation": {
-              "title": "Hide Battery and Charging Information",
+            "findButtonEnabled": {
+              "title": "Enable Find Button",
               "type": "boolean",
               "required": false,
-              "default": false
+              "default": true
             },
-            "hideFindButton": {
-              "title": "Hide Find Button",
+            "batteryInformationEnabled": {
+              "title": "Enable Battery and Charging Information",
               "type": "boolean",
               "required": false,
-              "default": false
+              "default": true
             },
-            "hideErrorSensor": {
-              "title": "Hide Error Sensor",
+            "errorSensorEnabled": {
+              "title": "Enable Error Sensor",
               "type": "boolean",
               "required": false,
-              "default": false
+              "default": true
             }
           }
         }
       },
-      "debugLog": {
+      "debugLogEnabled": {
         "title": "Enable Debug Log",
+        "description": "Diverts the log messages for all log levels directly to the console",
         "type": "boolean",
         "required": false,
         "default": false

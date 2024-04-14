@@ -1,4 +1,4 @@
-import { Service, PlatformAccessory, CharacteristicValue, Characteristic } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 
 import { EufyRobovacPlatform } from './platform';
 import { ErrorCode, RoboVac, StatusDps, StatusResponse, WorkStatus, getErrorCodeFriendlyName, statusDpsFriendlyNames } from './robovac-api';
@@ -16,10 +16,10 @@ export class EufyRobovacAccessory {
   private readonly log: Logger;
 
   private readonly name: string;
-  private readonly connectionConfig: { deviceId: any; localKey: any; deviceIp: string };
-  private readonly hideFindButton: boolean;
-  private readonly hideBatteryInformation: boolean;
-  private readonly hideErrorSensor: boolean;
+  private readonly connectionConfig: { deviceId: string; localKey: string; deviceIp: string };
+  private readonly findButtonEnabled: boolean;
+  private readonly batteryInformationEnabled: boolean;
+  private readonly errorSensorEnabled: boolean;
 
 
   private readonly callbackTimeout = 3000;
@@ -40,9 +40,9 @@ export class EufyRobovacAccessory {
       localKey: config.localKey,
       deviceIp: config.deviceIp
     };
-    this.hideFindButton = config.hideFindButton;
-    this.hideBatteryInformation = config.hideBatteryInformation;
-    this.hideErrorSensor = config.hideErrorSensor;
+    this.findButtonEnabled = config.findButtonEnabled;
+    this.batteryInformationEnabled = config.batteryInformationEnabled;
+    this.errorSensorEnabled = config.errorSensorEnabled;
 
     // set accessory information
     this.informationService = this.accessory.getService(this.platform.Service.AccessoryInformation)!;
@@ -64,7 +64,7 @@ export class EufyRobovacAccessory {
       .onSet(this.setRunning.bind(this));
 
     // create find robot service
-    if (!this.hideFindButton) {
+    if (this.findButtonEnabled) {
       this.findRobotService = this.accessory.getService("FindRobot") || this.accessory.addService(this.platform.Service.Switch, "FindRobot", "FIND_ROBOT");
       this.findRobotService.getCharacteristic(this.platform.Characteristic.On)
         .onGet(this.getFindRobot.bind(this))
@@ -72,7 +72,7 @@ export class EufyRobovacAccessory {
     }
 
     // create battery service
-    if (!this.hideBatteryInformation) {
+    if (this.batteryInformationEnabled) {
       this.batteryService = this.accessory.getService("Battery") || this.accessory.addService(this.platform.Service.Battery, "Battery", "BATTERY");
       this.batteryService.getCharacteristic(this.platform.Characteristic.StatusLowBattery)
         .onGet(this.getLowBattery.bind(this));
@@ -83,7 +83,7 @@ export class EufyRobovacAccessory {
     }
 
     // create error sensor service
-    if (!this.hideErrorSensor) {
+    if (this.errorSensorEnabled) {
       this.errorSensorService = this.accessory.getService("ErrorSensor") || this.accessory.addService(this.platform.Service.MotionSensor, "ErrorSensor", "ERROR_SENSOR");
       this.errorSensorService.getCharacteristic(this.platform.Characteristic.MotionDetected)
         .onGet(this.getErrorStatus.bind(this))
@@ -132,7 +132,7 @@ export class EufyRobovacAccessory {
     this.log.debug(`getLowBattery for ${this.name}`);
 
     try {
-      let battery_level = await Promise.race([
+      const battery_level = await Promise.race([
         this.roboVac.getBatteryLevel(),
         new Promise<number>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
@@ -163,7 +163,7 @@ export class EufyRobovacAccessory {
     this.log.debug(`getCharging for ${this.name}`);
 
     try {
-      let work_status = await Promise.race([
+      const work_status = await Promise.race([
         this.roboVac.getWorkStatus(),
         new Promise<WorkStatus>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
@@ -179,7 +179,7 @@ export class EufyRobovacAccessory {
     this.log.debug(`getErrorStatus for ${this.name}`);
 
     try {
-      let error_code = await Promise.race([
+      const error_code = await Promise.race([
         this.roboVac.getErrorCode(),
         new Promise<string>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
@@ -198,10 +198,16 @@ export class EufyRobovacAccessory {
   async setRunning(state: CharacteristicValue) {
     this.log.debug(`setRunning for ${this.name} set to ${state}`);
 
+    if (!state && this.roboVac.getRunningCached() == false) {
+      // don't send additional "GO HOME" command when already off
+      this.log.debug(`setRunning for ${this.name} set to ${state} received, but not sending GO HOME command because according to cache the device is already off`);
+      return;
+    }
+
     try {
       return await Promise.race([
         (state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true),
-        new Promise<CharacteristicValue>((resolve, reject) => {
+        new Promise<void>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         })
       ]);
@@ -216,7 +222,7 @@ export class EufyRobovacAccessory {
     try {
       return await Promise.race([
         this.roboVac.setFindRobot(state as boolean),
-        new Promise<CharacteristicValue>((resolve, reject) => {
+        new Promise<void>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         })
       ]);
@@ -234,7 +240,7 @@ export class EufyRobovacAccessory {
 
   updateCharacteristics(statusResponse: StatusResponse) {
     this.log.debug(`updateCharacteristics for ${this.name}`);
-    var counter = 0;
+    let counter = 0;
     if (statusResponse.dps[StatusDps.RUNNING] !== undefined) {
       this.log.debug(`updating ${statusDpsFriendlyNames.get(StatusDps.RUNNING)} for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
       this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
@@ -259,7 +265,7 @@ export class EufyRobovacAccessory {
       }
     }
     if (this.errorSensorService && statusResponse.dps[StatusDps.ERROR_CODE] !== undefined) {
-      let is_error = (statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
+      const is_error = (statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
       this.log.debug(`updating Error Sensor status for ${this.name} to ${is_error}`);
       this.errorSensorService.updateCharacteristic(this.platform.Characteristic.MotionDetected, is_error);
       if (is_error) this.log.info(`${this.name} reported a device error: ${getErrorCodeFriendlyName(statusResponse.dps[StatusDps.ERROR_CODE])}`);

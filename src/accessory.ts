@@ -198,10 +198,15 @@ export class EufyRobovacAccessory {
   async setRunning(state: CharacteristicValue) {
     this.log.debug(`setRunning for ${this.name} set to ${state}`);
 
+    if (!state && this.roboVac.getRunningCached() == false) {
+      // don't send additional "GO HOME" command when already off
+      return;
+    }
+
     try {
       return await Promise.race([
         (state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true),
-        new Promise<CharacteristicValue>((resolve, reject) => {
+        new Promise<void>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         })
       ]);
@@ -216,7 +221,7 @@ export class EufyRobovacAccessory {
     try {
       return await Promise.race([
         this.roboVac.setFindRobot(state as boolean),
-        new Promise<CharacteristicValue>((resolve, reject) => {
+        new Promise<void>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         })
       ]);

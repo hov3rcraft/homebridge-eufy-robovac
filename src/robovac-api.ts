@@ -214,6 +214,7 @@ export class RoboVac {
             if (data.dps) {
                 Object.assign(this.lastStatus, data);
                 this.lastStatusUpdate = new Date();
+                this.lastStatusValid = true;
                 dataReceivedCallback(data);
             }
         });
@@ -255,7 +256,7 @@ export class RoboVac {
 
     async disconnect() {
         this.ongoingStatusUpdate = null;
-        this.lastStatusUpdate = new Date(0);
+        this.lastStatusValid = false;
         if (this.api.isConnected()) {
             await this.api.disconnect();
         }
@@ -294,6 +295,7 @@ export class RoboVac {
             const schema = await this.api.get({ schema: true });
             this.lastStatus = schema as RobovacStatus;
             this.lastStatusUpdate = new Date();
+            this.lastStatusValid = true;
             this.ongoingStatusUpdate = null;
             this.log.debug("Status update retrieved.")
             return this.lastStatus;

@@ -200,6 +200,7 @@ export class EufyRobovacAccessory {
 
     if (!state && this.roboVac.getRunningCached() == false) {
       // don't send additional "GO HOME" command when already off
+      this.log.debug(`setRunning for ${this.name} set to ${state} received, but not sending GO HOME command because according to cache the device is already off`);
       return;
     }
 

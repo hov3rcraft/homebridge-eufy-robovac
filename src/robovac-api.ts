@@ -374,10 +374,6 @@ export class RoboVac {
     }
 
     getRunningCached(): boolean | null {
-        console.log(this.lastStatus)
-        console.log(this.lastStatusValid)
-        console.log(this.lastStatus.dps[StatusDps.RUNNING])
-        console.log(this.lastStatus.dps[StatusDps.RUNNING] == false)
         return this.lastStatusValid ? this.lastStatus.dps[StatusDps.RUNNING] : null;
     }
 

@@ -7,7 +7,7 @@ A big refactor of [apexad/homebridge-eufy-robovac](https://github.com/apexad/hom
 
 ### Features
 
-* Switch on / off. When off, it will returning to charging dock automatically.
+* Switch on / off. When switching off, the RoboVac will return to charging dock first.
 
 * Display battery level, and notify on low battery.
 

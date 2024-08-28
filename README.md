@@ -7,7 +7,7 @@ A big refactor of [apexad/homebridge-eufy-robovac](https://github.com/apexad/hom
 
 ### Features
 
-* Switch on / off. When off, it will returning to charging dock automatically.
+* Switch on / off. When switching off, the RoboVac will return to charging dock first.
 
 * Display battery level, and notify on low battery.
 
@@ -67,5 +67,3 @@ You can add multiple RoboVacs under `devices`.
 ## Development
 
 This plugin is written in TypeScript. You should just need to run `npm run build` after making changes in the `src/` directory.
-
-Also this plugin is dependent on [eufy-robovac](https://github.com/joshstrange/eufy-robovac/) so you will probably want to fork that repo as well.

@@ -194,7 +194,9 @@ export class RoboVac {
             }
 
             if (data.dps) {
+                this.log.info("DP_REFRESH_OLD:", this.lastStatus)
                 Object.assign(this.lastStatus, data);
+                this.log.info("DP_REFRESH:", this.lastStatus)
                 this.lastStatusUpdate = new Date();
                 dataReceivedCallback(data);
             }
@@ -212,7 +214,9 @@ export class RoboVac {
             }
 
             if (data.dps) {
+                this.log.info("DP_DATA_OLD:", this.lastStatus)
                 Object.assign(this.lastStatus, data);
+                this.log.info("DP_DATA:", this.lastStatus)
                 this.lastStatusUpdate = new Date();
                 this.lastStatusValid = true;
                 dataReceivedCallback(data);
@@ -293,7 +297,9 @@ export class RoboVac {
             }
 
             const schema = await this.api.get({ schema: true });
+            this.log.info("GETSTATUSFROMDEVICE_OLD:", this.lastStatus)
             this.lastStatus = schema as RobovacStatus;
+            this.log.info("GETSTATUSFROMDEVICE:", this.lastStatus)
             this.lastStatusUpdate = new Date();
             this.lastStatusValid = true;
             this.ongoingStatusUpdate = null;
@@ -330,7 +336,6 @@ export class RoboVac {
 
     async getRunning(): Promise<boolean> {
         const robovacStatus = await this.getStatus();
-        this.log.info("GET RUNNING", robovacStatus);
         return <boolean>robovacStatus.dps[StatusDps.RUNNING];
     }
 
@@ -361,7 +366,6 @@ export class RoboVac {
 
     async getFindRobot(): Promise<boolean> {
         const robovacStatus = await this.getStatus();
-        this.log.info("GET FIND ROBOT", robovacStatus);
         return <boolean>robovacStatus.dps[StatusDps.FIND_ROBOT];
     }
 

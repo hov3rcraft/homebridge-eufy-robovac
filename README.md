@@ -67,5 +67,3 @@ You can add multiple RoboVacs under `devices`.
 ## Development
 
 This plugin is written in TypeScript. You should just need to run `npm run build` after making changes in the `src/` directory.
-
-Also this plugin is dependent on [eufy-robovac](https://github.com/joshstrange/eufy-robovac/) so you will probably want to fork that repo as well.

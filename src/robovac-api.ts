@@ -330,6 +330,7 @@ export class RoboVac {
 
     async getRunning(): Promise<boolean> {
         const robovacStatus = await this.getStatus();
+        this.log.info("GET RUNNING", robovacStatus);
         return <boolean>robovacStatus.dps[StatusDps.RUNNING];
     }
 
@@ -360,6 +361,7 @@ export class RoboVac {
 
     async getFindRobot(): Promise<boolean> {
         const robovacStatus = await this.getStatus();
+        this.log.info("GET FIND ROBOT", robovacStatus);
         return <boolean>robovacStatus.dps[StatusDps.FIND_ROBOT];
     }
 

@@ -194,7 +194,7 @@ export class RoboVac {
             }
 
             if (data.dps) {
-                Object.assign(this.lastStatus, data);
+                Object.assign(this.lastStatus.dps, data.dps);
                 this.lastStatusUpdate = new Date();
                 dataReceivedCallback(data);
             }
@@ -212,7 +212,7 @@ export class RoboVac {
             }
 
             if (data.dps) {
-                Object.assign(this.lastStatus, data);
+                Object.assign(this.lastStatus.dps, data.dps);
                 this.lastStatusUpdate = new Date();
                 this.lastStatusValid = true;
                 dataReceivedCallback(data);

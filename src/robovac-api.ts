@@ -194,9 +194,7 @@ export class RoboVac {
             }
 
             if (data.dps) {
-                this.log.info("DP_REFRESH_OLD:", this.lastStatus)
                 Object.assign(this.lastStatus.dps, data.dps);
-                this.log.info("DP_REFRESH:", this.lastStatus)
                 this.lastStatusUpdate = new Date();
                 dataReceivedCallback(data);
             }
@@ -214,9 +212,7 @@ export class RoboVac {
             }
 
             if (data.dps) {
-                this.log.info("DP_DATA_OLD:", this.lastStatus)
                 Object.assign(this.lastStatus.dps, data.dps);
-                this.log.info("DP_DATA:", this.lastStatus)
                 this.lastStatusUpdate = new Date();
                 this.lastStatusValid = true;
                 dataReceivedCallback(data);
@@ -297,9 +293,7 @@ export class RoboVac {
             }
 
             const schema = await this.api.get({ schema: true });
-            this.log.info("GETSTATUSFROMDEVICE_OLD:", this.lastStatus)
             this.lastStatus = schema as RobovacStatus;
-            this.log.info("GETSTATUSFROMDEVICE:", this.lastStatus)
             this.lastStatusUpdate = new Date();
             this.lastStatusValid = true;
             this.ongoingStatusUpdate = null;

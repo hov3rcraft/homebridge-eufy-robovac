@@ -3,7 +3,7 @@ Homebridge plugin for Eufy RoboVac
 
 ### About this Fork
 
-A big refactor of [apexad/homebridge-eufy-robovac](https://github.com/apexad/homebridge-eufy-robovac) to improve performance ([#34](https://github.com/apexad/homebridge-eufy-robovac/issues/34)) and repair broken features, like the "Find Robot" switch.
+A full rewrite of [apexad/homebridge-eufy-robovac](https://github.com/apexad/homebridge-eufy-robovac) to improve performance ([#34](https://github.com/apexad/homebridge-eufy-robovac/issues/34)) and repair broken features, like the "Find Robot" switch.
 
 ### Features
 
@@ -18,6 +18,7 @@ A big refactor of [apexad/homebridge-eufy-robovac](https://github.com/apexad/hom
 ### Get Device ID & Local Key
 To access your RoboVac, you need both the `deviceId`/`localKey`.
 To get the `deviceId`/`localKey` use the [`eufy-clean-local-key-grabber`](https://github.com/Rjevski/eufy-clean-local-key-grabber/tree/master) repository.
+In the README of that project it says they are not sure if it still works, but I can confirm that it still works as of August 2024.
 
 ### Configuration
 This easiest way to use this plugin is to use [homebridge-config-ui-x](https://www.npmjs.com/package/homebridge-config-ui-x).  

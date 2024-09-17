@@ -271,7 +271,7 @@ export class EufyRobovacAccessory {
       if (is_error) this.log.info(`${this.name} reported a device error: ${getErrorCodeFriendlyName(statusResponse.dps[StatusDps.ERROR_CODE])}`);
       counter++;
     }
-    this.log.info(`New data from ${this.name} received - updated ${counter} characteristics.`)
+    this.log.debug(`updateCharacteristics for ${this.name} complete - updated ${counter} characteristics.`)
   }
 
   workStatusToChargingState(workStatus: WorkStatus): number {

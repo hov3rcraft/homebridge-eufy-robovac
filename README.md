@@ -3,7 +3,11 @@ Homebridge plugin for Eufy RoboVac
 
 ### About this Fork
 
-A full rewrite of [apexad/homebridge-eufy-robovac](https://github.com/apexad/homebridge-eufy-robovac) to improve performance ([#34](https://github.com/apexad/homebridge-eufy-robovac/issues/34)) and repair broken features, like the "Find Robot" switch.
+A full rewrite of [apexad/homebridge-eufy-robovac](https://github.com/apexad/homebridge-eufy-robovac) to
+* improve performance
+* solve "This plugin slows down Homebridge" warnings ([#34](https://github.com/apexad/homebridge-eufy-robovac/issues/34))
+* repair broken features, like the "Find Robot" switch
+* convert to a "homebridge dynamic platform" plugin
 
 ### Features
 
@@ -24,7 +28,7 @@ In the README of that project it says they are not sure if it still works, but I
 This easiest way to use this plugin is to use [homebridge-config-ui-x](https://www.npmjs.com/package/homebridge-config-ui-x).  
 To configure manually, add to the `platform` section of homebridge's `config.json` after installing the plugin.
 
-**Command:** ```npm install -g homebridge-eufy-robovac```
+**Command:** ```npm install -g @hov3rcraft/homebridge-eufy-robovac```
 
 **Config:**
   ```json
@@ -61,7 +65,6 @@ You can add multiple RoboVacs under `devices`.
 ### Thank You
 
 * [mitchellrj](https://github.com/mitchellrj) - Did most of the legwork in figuring out how to talk to the Eufy
-* [seikan](https://github.com/seikan) - Provided a [great example](https://github.com/seikan/homebridge-xiaomi-mi-robot-vacuum) for how to expose a vacuum cleaner in homebridge/homekit
 * [apexad](https://github.com/apexad) - Created the [original version](https://github.com/apexad/homebridge-eufy-robovac) of the plugin.
 
 

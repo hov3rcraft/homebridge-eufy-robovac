@@ -20,7 +20,7 @@ A full rewrite of [apexad/homebridge-eufy-robovac](https://github.com/apexad/hom
 * Find robot
 
 ### Supported Devices
-Some newer RoboVac models, such as the Eufy Clean L60, are currently not supported as some messages are encrypted (see [#6]).
+Some newer RoboVac models, such as the Eufy Clean L60, are currently not supported as some messages are encrypted (see [#6](https://github.com/hov3rcraft/homebridge-eufy-robovac/issues/6)).
 
 ### Get Device ID & Local Key
 To access your RoboVac, you need both the `deviceId`/`localKey`.

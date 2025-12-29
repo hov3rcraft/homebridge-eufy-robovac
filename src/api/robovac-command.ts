@@ -12,13 +12,19 @@ export enum RobovacCommand {
 }
 
 export interface RobovacCommandSpec {
+  command: RobovacCommand;
   code: number;
   valueType: RobovacCommandValueType;
-  stringValues?: Record<string, string>;
+  stringValues?: Record<string, StringCommandValueMapping | string>; // TODO remove the second string here
 }
 
 export enum RobovacCommandValueType {
   BOOLEAN,
   NUMBER,
   STRING,
+}
+
+export interface StringCommandValueMapping {
+  id: number;
+  friendly_message: string;
 }

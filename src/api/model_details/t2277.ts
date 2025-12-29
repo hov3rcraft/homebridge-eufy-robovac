@@ -4,9 +4,10 @@ import { RobovacModelDetails } from "./robovac-model-details";
 
 export class T2277RobovacModelDetails extends RobovacModelDetails {
   constructor(modelId: string, modelName: string) {
-    super(modelId, modelName, {
-      [RobovacCommand.DEFAULT]: ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.DEFAULT],
-      [RobovacCommand.RUNNING]: {
+    super(modelId, modelName, [
+      ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.DEFAULT],
+      {
+        command: RobovacCommand.RUNNING,
         code: 152,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
@@ -17,7 +18,8 @@ export class T2277RobovacModelDetails extends RobovacModelDetails {
           "AggO": "nosweep",
         },
       },
-      [RobovacCommand.WORK_STATUS]: {
+      {
+        command: RobovacCommand.WORK_STATUS,
         code: 153,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
@@ -41,25 +43,29 @@ export class T2277RobovacModelDetails extends RobovacModelDetails {
           "AhAB": "Sleeping",
         },
       },
-      [RobovacCommand.RETURN_HOME]: {
+      {
+        command: RobovacCommand.RETURN_HOME,
         code: 152,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
           "AggG": "return",
         },
       },
-      [RobovacCommand.FIND_ROBOT]: {
+      {
+        command: RobovacCommand.FIND_ROBOT,
         code: 160,
         valueType: RobovacCommandValueType.BOOLEAN,
       },
-      [RobovacCommand.BATTERY_LEVEL]: {
+      {
+        command: RobovacCommand.BATTERY_LEVEL,
         code: 163,
         valueType: RobovacCommandValueType.NUMBER,
       },
-      [RobovacCommand.ERROR]: {
+      {
+        command: RobovacCommand.ERROR,
         code: 177,
         valueType: RobovacCommandValueType.STRING,
       },
-    });
+    ]);
   }
 }

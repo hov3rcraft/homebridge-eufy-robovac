@@ -4,13 +4,14 @@ import { RobovacModelDetails } from "./robovac-model-details";
 
 export class T2080RobovacModelDetails extends RobovacModelDetails {
   constructor(modelId: string, modelName: string) {
-    super(modelId, modelName, {
-      [RobovacCommand.DEFAULT]: ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.DEFAULT],
-      [RobovacCommand.RUNNING]: ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.RUNNING],
-      [RobovacCommand.FIND_ROBOT]: ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.FIND_ROBOT],
-      [RobovacCommand.BATTERY_LEVEL]: ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.BATTERY_LEVEL],
-      [RobovacCommand.ERROR]: ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.ERROR],
-      [RobovacCommand.RETURN_HOME]: {
+    super(modelId, modelName, [
+      ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.DEFAULT],
+      ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.RUNNING],
+      ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.FIND_ROBOT],
+      ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.BATTERY_LEVEL],
+      ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.ERROR],
+      {
+        command: RobovacCommand.RETURN_HOME,
         code: 152,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
@@ -22,10 +23,11 @@ export class T2080RobovacModelDetails extends RobovacModelDetails {
           "AggB": "Vacuum and Mop",
         },
       },
-      [RobovacCommand.WORK_STATUS]: {
+      {
+        command: RobovacCommand.WORK_STATUS,
         code: 153,
         valueType: RobovacCommandValueType.STRING,
-        "stringValues": {
+        stringValues: {
           "CAoAEAUyAggB": "Paused",
           "CAoCCAEQBTIA": "Room Cleaning",
           "CAoCCAEQBVIA": "Room Positioning",
@@ -62,6 +64,6 @@ export class T2080RobovacModelDetails extends RobovacModelDetails {
           "CAoAEAIyAggB": "Error",
         },
       },
-    });
+    ]);
   }
 }

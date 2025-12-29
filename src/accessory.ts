@@ -1,8 +1,11 @@
 import { Service, PlatformAccessory, CharacteristicValue } from "homebridge";
 
 import { EufyRobovacPlatform } from "./platform";
-import { ErrorCode, RoboVac, StatusDps, StatusResponse, WorkStatus, getErrorCodeFriendlyName, statusDpsFriendlyNames } from "./api/robovac-api";
+import { RoboVac, RobovacStatus } from "./api/robovac-api";
 import { Logger } from "./console-logger";
+import { RobovacCommand, StringCommandValueMapping } from "./api/robovac-command";
+import { error } from "node:console";
+import { DeviceError } from "./api/device-errors";
 
 export class EufyRobovacAccessory {
   private readonly platform: EufyRobovacPlatform;
@@ -22,7 +25,7 @@ export class EufyRobovacAccessory {
   private readonly batteryInformationEnabled: boolean;
   private readonly errorSensorEnabled: boolean;
 
-  private readonly callbackTimeout = 3000;
+  private readonly callbackTimeout = 1000;
   private readonly cachingDuration = 60000;
   private readonly lowBatteryThreshold = 10;
 
@@ -100,91 +103,118 @@ export class EufyRobovacAccessory {
   async getRunning(): Promise<CharacteristicValue> {
     this.log.debug(`getRunning for ${this.name}`);
 
+    let running: boolean | undefined = undefined;
     try {
-      return await Promise.race([
+      running = await Promise.race([
         this.roboVac.getRunning(),
-        new Promise<boolean>((resolve, reject) => {
+        new Promise<undefined>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         }),
       ]);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
+
+    if (running === undefined) {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
+    return running;
   }
 
   async getFindRobot(): Promise<CharacteristicValue> {
     this.log.debug(`getFindRobot for ${this.name}`);
 
+    let find_robot: boolean | undefined = undefined;
     try {
-      return await Promise.race([
+      find_robot = await Promise.race([
         this.roboVac.getFindRobot(),
-        new Promise<boolean>((resolve, reject) => {
+        new Promise<undefined>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         }),
       ]);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
+
+    if (find_robot === undefined) {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
+    return find_robot;
   }
 
   async getLowBattery(): Promise<CharacteristicValue> {
     this.log.debug(`getLowBattery for ${this.name}`);
 
+    let battery_level: number | undefined = undefined;
     try {
-      const battery_level = await Promise.race([
+      battery_level = await Promise.race([
         this.roboVac.getBatteryLevel(),
-        new Promise<number>((resolve, reject) => {
+        new Promise<undefined>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         }),
       ]);
-      return battery_level <= this.lowBatteryThreshold;
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
+    if (battery_level === undefined) {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
+    return battery_level <= this.lowBatteryThreshold;
   }
 
   async getBatteryLevel(): Promise<CharacteristicValue> {
     this.log.debug(`getBatteryLevel for ${this.name}`);
 
+    let battery_level: number | undefined = undefined;
     try {
-      return await Promise.race([
+      battery_level = await Promise.race([
         this.roboVac.getBatteryLevel(),
-        new Promise<number>((resolve, reject) => {
+        new Promise<undefined>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         }),
       ]);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
+
+    if (battery_level === undefined) {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
+    return battery_level;
   }
 
   async getCharging(): Promise<CharacteristicValue> {
     this.log.debug(`getCharging for ${this.name}`);
 
+    let work_status: string | undefined = undefined;
     try {
-      const work_status = await Promise.race([
+      work_status = await Promise.race([
         this.roboVac.getWorkStatus(),
-        new Promise<WorkStatus>((resolve, reject) => {
+        new Promise<undefined>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         }),
       ]);
-      return this.workStatusToChargingState(work_status);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
+
+    if (work_status === undefined) {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
+    return this.workStatusToChargingState(work_status);
   }
 
   async getErrorStatus(): Promise<CharacteristicValue> {
     this.log.debug(`getErrorStatus for ${this.name}`);
 
     try {
-      const error_code = await Promise.race([
+      const device_error = await Promise.race([
         this.roboVac.getErrorCode(),
-        new Promise<string>((resolve, reject) => {
+        new Promise<undefined>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         }),
       ]);
-      return error_code !== ErrorCode.NO_ERROR;
+      return !(device_error === undefined || device_error.id === DeviceError.NO_ERROR.id);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
@@ -198,9 +228,9 @@ export class EufyRobovacAccessory {
     this.log.debug(`setRunning for ${this.name} set to ${state}`);
 
     if (!state && this.roboVac.getRunningCached() == false) {
-      // don't send additional "GO HOME" command when already off
+      // don't send additional "RETURN HOME" command when already off
       this.log.debug(
-        `setRunning for ${this.name} set to ${state} received, but not sending GO HOME command because according to cache the device is already off`
+        `setRunning for ${this.name} set to ${state} received, but not sending RETURN HOME command because according to cache the device is already off`
       );
       return;
     }
@@ -239,55 +269,53 @@ export class EufyRobovacAccessory {
     this.log.info("Triggered SET Identify:", value);
   }
 
-  updateCharacteristics(statusResponse: StatusResponse) {
+  updateCharacteristics(status: RobovacStatus) {
     this.log.debug(`updateCharacteristics for ${this.name}`);
     let counter = 0;
-    if (statusResponse.dps[StatusDps.RUNNING] !== undefined) {
-      this.log.debug(`updating ${statusDpsFriendlyNames.get(StatusDps.RUNNING)} for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
-      this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
+    const status_running = status[RobovacCommand.RUNNING] as boolean | undefined;
+    if (status_running !== undefined) {
+      this.log.debug(`updating ${RobovacCommand.RUNNING} for ${this.name} to ${status_running}`);
+      this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, status_running);
       counter++;
     }
-    if (this.findRobotService && statusResponse.dps[StatusDps.FIND_ROBOT] !== undefined) {
-      this.log.debug(`updating ${statusDpsFriendlyNames.get(StatusDps.FIND_ROBOT)} for ${this.name} to ${statusResponse.dps[StatusDps.FIND_ROBOT]}`);
-      this.findRobotService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.FIND_ROBOT]);
+    const status_find_robot = status[RobovacCommand.FIND_ROBOT] as boolean | undefined;
+    if (this.findRobotService && status_find_robot !== undefined) {
+      this.log.debug(`updating ${RobovacCommand.FIND_ROBOT} for ${this.name} to ${status_find_robot}`);
+      this.findRobotService.updateCharacteristic(this.platform.Characteristic.On, status_find_robot);
       counter++;
     }
     if (this.batteryService) {
-      if (statusResponse.dps[StatusDps.BATTERY_LEVEL] !== undefined) {
-        this.log.debug(`updating ${statusDpsFriendlyNames.get(StatusDps.BATTERY_LEVEL)} for ${this.name} to ${statusResponse.dps[StatusDps.BATTERY_LEVEL]}`);
-        this.batteryService.updateCharacteristic(
-          this.platform.Characteristic.StatusLowBattery,
-          statusResponse.dps[StatusDps.BATTERY_LEVEL] <= this.lowBatteryThreshold
-        );
-        this.batteryService.updateCharacteristic(this.platform.Characteristic.BatteryLevel, statusResponse.dps[StatusDps.BATTERY_LEVEL]);
+      const status_battery_level = status[RobovacCommand.BATTERY_LEVEL] as number | undefined;
+      if (status_battery_level !== undefined) {
+        this.log.debug(`updating ${RobovacCommand.BATTERY_LEVEL} for ${this.name} to ${status_battery_level}`);
+        this.batteryService.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, status_battery_level <= this.lowBatteryThreshold);
+        this.batteryService.updateCharacteristic(this.platform.Characteristic.BatteryLevel, status_battery_level);
         counter++;
       }
-      if (statusResponse.dps[StatusDps.WORK_STATUS] !== undefined) {
-        this.log.debug(`updating ${statusDpsFriendlyNames.get(StatusDps.WORK_STATUS)} for ${this.name} to ${statusResponse.dps[StatusDps.WORK_STATUS]}`);
-        this.batteryService.updateCharacteristic(
-          this.platform.Characteristic.ChargingState,
-          this.workStatusToChargingState(statusResponse.dps[StatusDps.WORK_STATUS] as WorkStatus)
-        );
+      const status_work_status = status[RobovacCommand.WORK_STATUS] as string | undefined;
+      if (status_work_status !== undefined) {
+        this.log.debug(`updating ${RobovacCommand.WORK_STATUS} for ${this.name} to ${status_work_status}`);
+        this.batteryService.updateCharacteristic(this.platform.Characteristic.ChargingState, this.workStatusToChargingState(status_work_status));
         counter++;
       }
     }
-    if (this.errorSensorService && statusResponse.dps[StatusDps.ERROR_CODE] !== undefined) {
-      const is_error = statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR;
+    if (this.errorSensorService) {
+      const status_error = status[RobovacCommand.ERROR] as StringCommandValueMapping | undefined;
+      const is_error = status_error !== undefined && status_error.id !== DeviceError.NO_ERROR.id;
       this.log.debug(`updating Error Sensor status for ${this.name} to ${is_error}`);
       this.errorSensorService.updateCharacteristic(this.platform.Characteristic.MotionDetected, is_error);
-      if (is_error) this.log.info(`${this.name} reported a device error: ${getErrorCodeFriendlyName(statusResponse.dps[StatusDps.ERROR_CODE])}`);
+      if (is_error) this.log.info(`${this.name} reported a device error: ${status_error.friendly_message}`);
       counter++;
     }
     this.log.debug(`updateCharacteristics for ${this.name} complete - updated ${counter} characteristics.`);
   }
 
-  workStatusToChargingState(workStatus: WorkStatus): number {
-    switch (workStatus) {
-      case WorkStatus.CHARGING:
-      case WorkStatus.CHARGING_COMPLETED:
-        return this.platform.Characteristic.ChargingState.CHARGING;
-      default:
-        return this.platform.Characteristic.ChargingState.NOT_CHARGING;
+  workStatusToChargingState(workStatus: string): number {
+    // TODO replace with robust check
+    if (workStatus === "Charging" || workStatus === "Charging completed") {
+      return this.platform.Characteristic.ChargingState.CHARGING;
+    } else {
+      return this.platform.Characteristic.ChargingState.NOT_CHARGING;
     }
   }
 }

@@ -3,11 +3,43 @@ import { RobovacCommand, RobovacCommandSpec } from "../robovac-command";
 export abstract class RobovacModelDetails {
   readonly modelId: string;
   readonly modelName: string;
-  readonly commands: Partial<Record<RobovacCommand, RobovacCommandSpec>>;
+  private commandSpecsByCommand: Partial<Record<RobovacCommand, RobovacCommandSpec>>;
+  private commandSpecsByCode: Partial<Record<number, RobovacCommandSpec>>;
 
-  constructor(modelId: string, modelName: string, commands: Partial<Record<RobovacCommand, RobovacCommandSpec>>) {
+  constructor(modelId: string, modelName: string, commands: RobovacCommandSpec[]) {
     this.modelId = modelId;
     this.modelName = modelName;
-    this.commands = commands;
+
+    this.commandSpecsByCommand = {};
+    this.commandSpecsByCode = {};
+
+    for (const cmd of commands) {
+      const existingByCommand = this.commandSpecsByCommand[cmd.command];
+      if (existingByCommand) {
+        throw new Error(
+          `Duplicate RobovacCommand spec for command '${String(cmd.command)}' in model '${modelId}' (${modelName}). ` +
+            `Existing code=${existingByCommand.code}, duplicate code=${cmd.code}`
+        );
+      }
+
+      const existingByCode = this.commandSpecsByCode[cmd.code];
+      if (existingByCode) {
+        throw new Error(
+          `Duplicate RobovacCommand spec for code ${cmd.code} in model '${modelId}' (${modelName}). ` +
+            `Existing command='${String(existingByCode.command)}', duplicate command='${String(cmd.command)}'`
+        );
+      }
+
+      this.commandSpecsByCommand[cmd.command] = cmd;
+      this.commandSpecsByCode[cmd.code] = cmd;
+    }
+  }
+
+  getCommandSpecByCommand(command: RobovacCommand): RobovacCommandSpec | undefined {
+    return this.commandSpecsByCommand[command];
+  }
+
+  getCommandSpecByCode(code: number): RobovacCommandSpec | undefined {
+    return this.commandSpecsByCode[code];
   }
 }

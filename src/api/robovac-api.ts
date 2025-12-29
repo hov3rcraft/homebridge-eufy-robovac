@@ -3,157 +3,32 @@ import { ConsoleLogger, Logger } from "../console-logger";
 import TuyAPI from "tuyapi";
 import { RobovacModelDetails } from "./model_details/robovac-model-details";
 import { createModelDetailsFromModelId } from "./model_details/supported-models";
+import { RobovacCommand, RobovacCommandValueType, StringCommandValueMapping } from "./robovac-command";
 
-export enum StatusDps {
-  DEFAULT = "1",
-  RUNNING = "2",
-  DIRECTION = "3",
-  WORK_MODE = "5",
-  WORK_STATUS = "15",
-  GO_HOME = "101",
-  CLEAN_SPEED = "102",
-  FIND_ROBOT = "103",
-  BATTERY_LEVEL = "104",
-  ERROR_CODE = "106",
-}
-
-export const statusDpsFriendlyNames = new Map<string, string>([
-  [StatusDps.DEFAULT, "Default Property (ignore)"],
-  [StatusDps.RUNNING, "Running"],
-  [StatusDps.DIRECTION, "Direction"],
-  [StatusDps.WORK_MODE, "Work Mode"],
-  [StatusDps.WORK_STATUS, "Work Status"],
-  [StatusDps.GO_HOME, "Go Home"],
-  [StatusDps.CLEAN_SPEED, "Clean Speed"],
-  [StatusDps.FIND_ROBOT, "Find Robot"],
-  [StatusDps.BATTERY_LEVEL, "Battery Level"],
-  [StatusDps.ERROR_CODE, "Error Code"],
-]);
-
-export interface StatusResponse {
+interface RobovacResponse {
   devId: string;
-  dps: {
-    [StatusDps.DEFAULT]?: boolean;
-    [StatusDps.RUNNING]?: boolean;
-    [StatusDps.DIRECTION]?: string;
-    [StatusDps.WORK_MODE]?: string;
-    [StatusDps.WORK_STATUS]?: string;
-    [StatusDps.GO_HOME]?: boolean;
-    [StatusDps.CLEAN_SPEED]?: string;
-    [StatusDps.FIND_ROBOT]?: boolean;
-    [StatusDps.BATTERY_LEVEL]?: number;
-    [StatusDps.ERROR_CODE]?: string;
-  };
+  dps: Record<string, any>;
 }
 
-export interface RobovacStatus {
-  devId: string;
-  dps: {
-    [StatusDps.DEFAULT]: boolean;
-    [StatusDps.RUNNING]: boolean;
-    [StatusDps.DIRECTION]: string;
-    [StatusDps.WORK_MODE]: string;
-    [StatusDps.WORK_STATUS]: string;
-    [StatusDps.GO_HOME]: boolean;
-    [StatusDps.CLEAN_SPEED]: string;
-    [StatusDps.FIND_ROBOT]: boolean;
-    [StatusDps.BATTERY_LEVEL]: number;
-    [StatusDps.ERROR_CODE]: string;
-  };
-}
-
-export function formatStatusResponse(statusResponse: StatusResponse): string {
-  let formattedStatus = `-- Status Start --\n`;
-  for (const dps of Object.values(StatusDps)) {
-    if (dps in statusResponse.dps) {
-      formattedStatus += `- ${statusDpsFriendlyNames.get(dps)}: ${statusResponse.dps[dps]}\n`;
-    }
-  }
-  formattedStatus += `-- Status End --`;
-  return formattedStatus;
-}
-
-export enum Direction {
-  FORWARD = "forward",
-  BACKWARD = "backward",
-  LEFT = "left",
-  RIGHT = "right",
-}
-
-export enum WorkMode {
-  AUTO = "auto",
-  SMALL_ROOM = "SmallRoom",
-  SPOT = "Spot",
-  EDGE = "Edge",
-  NO_SWEEP = "Nosweep",
-}
-
-export enum WorkStatus {
-  // Cleaning
-  RUNNING = "Running",
-  // Not in the dock, paused
-  STAND_BY = "standby",
-  // Not in the dock - goes into this state after being paused for a while
-  SLEEPING = "Sleeping",
-  // In the dock, charging
-  CHARGING = "Charging",
-  // In the dock, full charged
-  CHARGING_COMPLETED = "completed",
-  // Going home because battery is depleted or home was pressed
-  RECHARGE_NEEDED = "Recharge",
-}
-
-export enum CleanSpeed {
-  STANDARD = "Standard",
-  BOOST_IQ = "Boost_IQ",
-  MAX = "Max",
-  NO_SUCTION = "No_suction",
-}
-
-export enum ErrorCode {
-  NO_ERROR = "no_error",
-  STUCK_5_MIN = "Stuck_5_min",
-  CRASH_BAR_STUCK = "Crash_bar_stuck",
-  SENSOR_DIRTY = "sensor_dirty",
-  NOT_ENOUGH_POWER = "N_enough_pow",
-  WHEEL_STUCK = "Wheel_stuck",
-  S_BRUSH_STUCK = "S_brush_stuck",
-  FAN_STUCK = "Fan_stuck",
-  R_BRUSH_STUCK = "R_brush_stuck",
-}
-
-export const errorCodeFriendlyNames = new Map<string, string>([
-  [ErrorCode.NO_ERROR, "No Error"],
-  [ErrorCode.STUCK_5_MIN, "Stuck (5 Minutes)"],
-  [ErrorCode.CRASH_BAR_STUCK, "Crash Bar Stuck"],
-  [ErrorCode.SENSOR_DIRTY, "Sensor Dirty"],
-  [ErrorCode.NOT_ENOUGH_POWER, "Not Enough Power"],
-  [ErrorCode.WHEEL_STUCK, "Wheel Stuck"],
-  [ErrorCode.S_BRUSH_STUCK, "Brush Stuck"],
-  [ErrorCode.FAN_STUCK, "Fan Stuck"],
-  [ErrorCode.R_BRUSH_STUCK, "Brush Stuck"],
-]);
-
-export function getErrorCodeFriendlyName(errorCode: string) {
-  return errorCodeFriendlyNames.get(errorCode) ?? errorCode;
-}
+export type RobovacStatus = Record<RobovacCommand, boolean | number | string | StringCommandValueMapping | undefined>; // TODO remove string from here
 
 export class RoboVac {
   api: TuyAPI;
   directConnect: boolean;
+  lastResponse: RobovacResponse;
   lastStatus: RobovacStatus;
   lastStatusUpdate: Date;
   lastStatusValid: boolean;
   modelDetails: RobovacModelDetails;
   cachingDuration: number;
-  ongoingStatusUpdate: Promise<RobovacStatus> | null;
+  ongoingStatusUpdate: Promise<RobovacStatus> | undefined;
   log: Logger;
   consoleDebugLog: boolean;
 
   constructor(
     config: { deviceId: string; localKey: string; deviceIp: string },
     model: string,
-    dataReceivedCallback: (statusResponse: StatusResponse) => void,
+    dataReceivedCallback: (status: RobovacStatus) => void,
     cachingDuration: number,
     log: Logger = new ConsoleLogger()
   ) {
@@ -165,9 +40,8 @@ export class RoboVac {
     }
 
     this.modelDetails = createModelDetailsFromModelId(model);
-    log.info("#### Loaded model details for modelId", this.modelDetails.modelId, "(", this.modelDetails.modelName, ")");
     this.cachingDuration = cachingDuration;
-    this.directConnect = config.deviceIp != null && config.deviceIp != "";
+    this.directConnect = config.deviceIp !== null && config.deviceIp !== undefined && config.deviceIp !== "";
 
     this.api = new TuyAPI({
       id: config.deviceId,
@@ -192,65 +66,69 @@ export class RoboVac {
     });
 
     this.api.on("dp-refresh", (data: any) => {
-      if (this.consoleDebugLog) {
-        try {
-          this.log.debug("Received dps refresh data from device:", "\n" + formatStatusResponse(data));
-        } catch (e) {
-          this.log.debug("Received dps refresh data from device:", data);
-        }
-      } else {
+      try {
+        this.log.debug("Received dps refresh data from device:", "\n" + this.formatRobovacStatus(data));
+      } catch {
         this.log.debug("Received dps refresh data from device:", data);
       }
 
       if (data.dps) {
-        Object.assign(this.lastStatus.dps, data.dps);
-        this.lastStatusUpdate = new Date();
+        this.dataReceived(data);
         dataReceivedCallback(data);
       }
     });
 
     this.api.on("data", (data: any) => {
-      if (this.consoleDebugLog) {
-        try {
-          this.log.debug("Received data from device:", "\n" + formatStatusResponse(data));
-        } catch (e) {
-          this.log.debug("Received data from device:", data);
-        }
-      } else {
+      try {
+        this.log.debug("Received data from device:", "\n" + this.formatRobovacStatus(data));
+      } catch {
         this.log.debug("Received data from device:", data);
       }
 
       if (data.dps) {
-        Object.assign(this.lastStatus.dps, data.dps);
-        this.lastStatusUpdate = new Date();
-        this.lastStatusValid = true;
+        this.dataReceived(data);
         dataReceivedCallback(data);
       }
     });
 
     // init with default values
-    this.lastStatus = {
+    this.lastResponse = {
       devId: "default - invalid",
-      dps: {
-        [StatusDps.DEFAULT]: false,
-        [StatusDps.RUNNING]: false,
-        [StatusDps.DIRECTION]: Direction.FORWARD,
-        [StatusDps.WORK_MODE]: WorkMode.NO_SWEEP,
-        [StatusDps.WORK_STATUS]: WorkStatus.CHARGING,
-        [StatusDps.GO_HOME]: false,
-        [StatusDps.CLEAN_SPEED]: CleanSpeed.NO_SUCTION,
-        [StatusDps.FIND_ROBOT]: false,
-        [StatusDps.BATTERY_LEVEL]: -1,
-        [StatusDps.ERROR_CODE]: "default - invalid",
-      },
+      dps: {},
+    };
+    this.lastStatus = {
+      [RobovacCommand.DEFAULT]: undefined,
+      [RobovacCommand.RUNNING]: undefined,
+      [RobovacCommand.WORK_STATUS]: undefined,
+      [RobovacCommand.RETURN_HOME]: undefined,
+      [RobovacCommand.FIND_ROBOT]: undefined,
+      [RobovacCommand.BATTERY_LEVEL]: undefined,
+      [RobovacCommand.ERROR]: undefined,
     };
     this.lastStatusUpdate = new Date(0);
     this.lastStatusValid = false;
-    this.ongoingStatusUpdate = null;
+    this.ongoingStatusUpdate = undefined;
 
     this.connect().catch((e) => {
       this.log.error("Error during initial connect:", e);
     });
+  }
+
+  private dataReceived(data: any) {
+    this.lastResponse = data;
+    for (const [dps_code, dps_value] of Object.entries(this.lastResponse.dps)) {
+      const commandSpec = this.modelDetails.getCommandSpecByCode(Number(dps_code));
+      if (commandSpec) {
+        if (commandSpec.valueType === RobovacCommandValueType.STRING && commandSpec.stringValues) {
+          this.lastStatus[commandSpec.command] = commandSpec.stringValues[dps_value] ?? dps_value;
+        } else {
+          this.lastStatus[commandSpec.command] = dps_value;
+        }
+      }
+    }
+
+    this.lastStatusUpdate = new Date();
+    this.lastStatusValid = true;
   }
 
   async connect(): Promise<void> {
@@ -264,18 +142,18 @@ export class RoboVac {
   }
 
   async disconnect() {
-    this.ongoingStatusUpdate = null;
+    this.ongoingStatusUpdate = undefined;
     this.lastStatusValid = false;
     if (this.api.isConnected()) {
       await this.api.disconnect();
     }
   }
 
-  getStatusCached(): RobovacStatus | null {
-    return this.lastStatusValid ? this.lastStatus : null;
+  private getStatusCached(): RobovacStatus | undefined {
+    return this.lastStatusValid ? this.lastStatus : undefined;
   }
 
-  async getStatus(): Promise<RobovacStatus> {
+  private async getStatus(): Promise<RobovacStatus> {
     if (!this.lastStatusValid || Math.abs(new Date().getTime() - this.lastStatusUpdate.getTime()) > this.cachingDuration) {
       return this.getStatusFromDeviceSynchronized();
     } else {
@@ -284,8 +162,8 @@ export class RoboVac {
     }
   }
 
-  async getStatusFromDeviceSynchronized(): Promise<RobovacStatus> {
-    if (this.ongoingStatusUpdate != null) {
+  private async getStatusFromDeviceSynchronized(): Promise<RobovacStatus> {
+    if (this.ongoingStatusUpdate !== undefined) {
       this.log.debug("Duplicate status update request detected");
       return this.ongoingStatusUpdate;
     }
@@ -294,7 +172,7 @@ export class RoboVac {
     return this.ongoingStatusUpdate;
   }
 
-  async getStatusFromDevice(): Promise<RobovacStatus> {
+  private async getStatusFromDevice(): Promise<RobovacStatus> {
     this.log.info("Fetching status update...");
     try {
       if (!this.api.isConnected()) {
@@ -302,141 +180,164 @@ export class RoboVac {
       }
 
       const schema = await this.api.get({ schema: true });
-      this.lastStatus = schema as RobovacStatus;
-      this.lastStatusUpdate = new Date();
-      this.lastStatusValid = true;
-      this.ongoingStatusUpdate = null;
+      this.dataReceived(schema as RobovacResponse);
+      this.ongoingStatusUpdate = undefined;
       this.log.debug("Status update retrieved.");
       return this.lastStatus;
     } catch (e) {
       this.log.error("An error occurred (during GET status update)!", e);
       try {
         this.disconnect();
-      } catch (e2) {}
+      } catch {}
       throw e;
     }
   }
 
-  async set(dps: StatusDps, newValue: any) {
-    this.log.debug("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "...");
+  private formatRobovacStatus(statusResponse: RobovacResponse): string {
+    let formattedStatus = `=== Status Start ===\n`;
+    let first = true;
+    const unknowns: [string, any][] = [];
+
+    for (const [dps_code, dps_value] of Object.entries(statusResponse.dps)) {
+      const commandSpec = this.modelDetails.getCommandSpecByCode(Number(dps_code));
+      if (commandSpec) {
+        if (first) {
+          formattedStatus += `--- Known Codes ---\n`;
+          first = false;
+        }
+        let friendlyValue: string | undefined = undefined;
+        if (commandSpec.valueType === RobovacCommandValueType.STRING && commandSpec.stringValues) {
+          // TODO remove this check
+          const fv = commandSpec.stringValues[dps_value];
+          if (typeof fv === "string") {
+            friendlyValue = fv;
+          } else if (fv !== undefined) {
+            friendlyValue = fv.friendly_message;
+          }
+        }
+
+        formattedStatus += `- ${commandSpec.command}: ${friendlyValue ?? JSON.stringify(dps_value)}\n`;
+      } else {
+        unknowns.push([dps_code, dps_value]);
+      }
+    }
+
+    if (unknowns.length > 0) {
+      formattedStatus += `--- Unknown Codes ---\n`;
+      for (const [dps_code, dps_value] of unknowns) {
+        formattedStatus += `- ${JSON.stringify(dps_code)}: ${JSON.stringify(dps_value)}\n`;
+      }
+    }
+
+    formattedStatus += `=== Status End ===`;
+    return formattedStatus;
+  }
+
+  private async set(command: RobovacCommand, newValue: string | number | boolean) {
+    this.log.debug("Setting", command, "to", newValue, "...");
+
+    const commandSpec = this.modelDetails.getCommandSpecByCommand(command);
+    if (!commandSpec) {
+      throw new Error(`Robovac command ${command} is not supported by model ${this.modelDetails.modelId}`);
+    }
+
+    switch (commandSpec.valueType) {
+      case RobovacCommandValueType.BOOLEAN:
+        if (typeof newValue !== "boolean") {
+          throw new Error(`Invalid value type for command ${commandSpec.command}: expected BOOLEAN, got ${typeof newValue}`);
+        }
+        break;
+      case RobovacCommandValueType.NUMBER:
+        if (typeof newValue !== "number") {
+          throw new Error(`Invalid value type for command ${commandSpec.command}: expected NUMBER, got ${typeof newValue}`);
+        }
+        break;
+      case RobovacCommandValueType.STRING:
+        if (typeof newValue !== "string") {
+          throw new Error(`Invalid value type for command ${commandSpec.command}: expected STRING, got ${typeof newValue}`);
+        }
+        break;
+    }
+
     try {
       if (!this.api.isConnected()) {
         await this.connect();
       }
 
-      await this.api.set({ dps: parseInt(dps), set: newValue });
-      this.log.info("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "successful.");
+      await this.api.set({ dps: commandSpec.code, set: newValue });
+      this.log.info("Setting", commandSpec.command, "to", newValue, "successful.");
     } catch (e) {
-      this.log.error("An error occurred! (during SET of", statusDpsFriendlyNames.get(dps), "to", newValue, "): ", e);
+      this.log.error("An error occurred! (during SET of", commandSpec.command, "to", newValue, "): ", e);
       try {
         this.disconnect();
-      } catch (e2) {}
+      } catch {}
       throw e;
     }
   }
 
-  async getRunning(): Promise<boolean> {
+  async getRunning(): Promise<boolean | undefined> {
     const robovacStatus = await this.getStatus();
-    return <boolean>robovacStatus.dps[StatusDps.RUNNING];
+    return <boolean | undefined>robovacStatus[RobovacCommand.RUNNING];
   }
 
-  async getDirection(): Promise<Direction> {
+  async getWorkStatus(): Promise<string | undefined> {
     const robovacStatus = await this.getStatus();
-    return <Direction>robovacStatus.dps[StatusDps.DIRECTION];
+    return <string | undefined>robovacStatus[RobovacCommand.WORK_STATUS];
   }
 
-  async getWorkMode(): Promise<WorkMode> {
+  async getGoHome(): Promise<boolean | undefined> {
     const robovacStatus = await this.getStatus();
-    return <WorkMode>robovacStatus.dps[StatusDps.WORK_MODE];
+    return <boolean | undefined>robovacStatus[RobovacCommand.RETURN_HOME];
   }
 
-  async getWorkStatus(): Promise<WorkStatus> {
+  async getFindRobot(): Promise<boolean | undefined> {
     const robovacStatus = await this.getStatus();
-    return <WorkStatus>robovacStatus.dps[StatusDps.WORK_STATUS];
+    return <boolean | undefined>robovacStatus[RobovacCommand.FIND_ROBOT];
   }
 
-  async getGoHome(): Promise<boolean> {
+  async getBatteryLevel(): Promise<number | undefined> {
     const robovacStatus = await this.getStatus();
-    return <boolean>robovacStatus.dps[StatusDps.GO_HOME];
+    return <number | undefined>robovacStatus[RobovacCommand.BATTERY_LEVEL];
   }
 
-  async getCleanSpeed(): Promise<CleanSpeed> {
+  async getErrorCode(): Promise<StringCommandValueMapping | undefined> {
     const robovacStatus = await this.getStatus();
-    return <CleanSpeed>robovacStatus.dps[StatusDps.CLEAN_SPEED];
+    return <StringCommandValueMapping | undefined>robovacStatus[RobovacCommand.ERROR];
   }
 
-  async getFindRobot(): Promise<boolean> {
-    const robovacStatus = await this.getStatus();
-    return <boolean>robovacStatus.dps[StatusDps.FIND_ROBOT];
+  getRunningCached(): boolean | undefined {
+    return this.lastStatusValid ? (this.lastStatus[RobovacCommand.RUNNING] as boolean | undefined) : undefined;
   }
 
-  async getBatteryLevel(): Promise<number> {
-    const robovacStatus = await this.getStatus();
-    return <number>robovacStatus.dps[StatusDps.BATTERY_LEVEL];
+  getWorkStatusCached(): string | undefined {
+    return this.lastStatusValid ? <string>this.lastStatus[RobovacCommand.WORK_STATUS] : undefined;
   }
 
-  async getErrorCode(): Promise<string> {
-    const robovacStatus = await this.getStatus();
-    return <string>robovacStatus.dps[StatusDps.ERROR_CODE];
+  getGoHomeCached(): boolean | undefined {
+    return this.lastStatusValid ? (this.lastStatus[RobovacCommand.RETURN_HOME] as boolean | undefined) : undefined;
   }
 
-  getRunningCached(): boolean | null {
-    return this.lastStatusValid ? this.lastStatus.dps[StatusDps.RUNNING] : null;
+  getFindRobotCached(): boolean | undefined {
+    return this.lastStatusValid ? (this.lastStatus[RobovacCommand.FIND_ROBOT] as boolean | undefined) : undefined;
   }
 
-  getDirectionCached(): Direction | null {
-    return this.lastStatusValid ? <Direction>this.lastStatus.dps[StatusDps.DIRECTION] : null;
+  getBatteryLevelCached(): number | undefined {
+    return this.lastStatusValid ? (this.lastStatus[RobovacCommand.BATTERY_LEVEL] as number | undefined) : undefined;
   }
 
-  getWorkModeCached(): WorkMode | null {
-    return this.lastStatusValid ? <WorkMode>this.lastStatus.dps[StatusDps.WORK_MODE] : null;
-  }
-
-  getWorkStatusCached(): WorkStatus | null {
-    return this.lastStatusValid ? <WorkStatus>this.lastStatus.dps[StatusDps.WORK_STATUS] : null;
-  }
-
-  getGoHomeCached(): boolean | null {
-    return this.lastStatusValid ? this.lastStatus.dps[StatusDps.GO_HOME] : null;
-  }
-
-  getCleanSpeedCached(): CleanSpeed | null {
-    return this.lastStatusValid ? <CleanSpeed>this.lastStatus.dps[StatusDps.CLEAN_SPEED] : null;
-  }
-
-  getFindRobotCached(): boolean | null {
-    return this.lastStatusValid ? this.lastStatus.dps[StatusDps.FIND_ROBOT] : null;
-  }
-
-  getBatteryLevelCached(): number | null {
-    return this.lastStatusValid ? this.lastStatus.dps[StatusDps.BATTERY_LEVEL] : null;
-  }
-
-  getErrorCodeCached(): string | null {
-    return this.lastStatusValid ? this.lastStatus.dps[StatusDps.ERROR_CODE] : null;
+  getErrorCodeCached(): StringCommandValueMapping | undefined {
+    return this.lastStatusValid ? (this.lastStatus[RobovacCommand.ERROR] as StringCommandValueMapping | undefined) : undefined;
   }
 
   async setPlayPause(newValue: boolean) {
-    return this.set(StatusDps.RUNNING, newValue);
-  }
-
-  async setDirection(newValue: Direction) {
-    return this.set(StatusDps.DIRECTION, newValue);
-  }
-
-  async setWorkMode(newValue: string) {
-    return this.set(StatusDps.WORK_MODE, newValue);
+    return this.set(RobovacCommand.RUNNING, newValue);
   }
 
   async setGoHome(newValue: boolean) {
-    return this.set(StatusDps.GO_HOME, newValue);
-  }
-
-  async setCleanSpeed(newValue: string) {
-    return this.set(StatusDps.CLEAN_SPEED, newValue);
+    return this.set(RobovacCommand.RETURN_HOME, newValue);
   }
 
   async setFindRobot(newValue: boolean) {
-    return this.set(StatusDps.FIND_ROBOT, newValue);
+    return this.set(RobovacCommand.FIND_ROBOT, newValue);
   }
 }

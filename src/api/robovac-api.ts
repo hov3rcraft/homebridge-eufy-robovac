@@ -1,6 +1,8 @@
 import { ConsoleLogger, Logger } from "../console-logger";
 
 import TuyAPI from "tuyapi";
+import { RobovacModelDetails } from "./model_details/robovac-model-details";
+import { createModelDetailsFromModelId } from "./model_details/supported-models";
 
 export enum StatusDps {
   DEFAULT = "1",
@@ -142,6 +144,7 @@ export class RoboVac {
   lastStatus: RobovacStatus;
   lastStatusUpdate: Date;
   lastStatusValid: boolean;
+  modelDetails: RobovacModelDetails;
   cachingDuration: number;
   ongoingStatusUpdate: Promise<RobovacStatus> | null;
   log: Logger;
@@ -149,11 +152,11 @@ export class RoboVac {
 
   constructor(
     config: { deviceId: string; localKey: string; deviceIp: string },
+    model: string,
     dataReceivedCallback: (statusResponse: StatusResponse) => void,
     cachingDuration: number,
     log: Logger = new ConsoleLogger()
   ) {
-    this.cachingDuration = cachingDuration;
     this.log = log;
     if (log instanceof ConsoleLogger) {
       this.consoleDebugLog = (log as ConsoleLogger).logLevel <= 1;
@@ -161,6 +164,9 @@ export class RoboVac {
       this.consoleDebugLog = false;
     }
 
+    this.modelDetails = createModelDetailsFromModelId(model);
+    log.info("#### Loaded model details for modelId", this.modelDetails.modelId, "(", this.modelDetails.modelName, ")");
+    this.cachingDuration = cachingDuration;
     this.directConnect = config.deviceIp != null && config.deviceIp != "";
 
     this.api = new TuyAPI({

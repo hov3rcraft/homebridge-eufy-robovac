@@ -16,6 +16,7 @@ export class EufyRobovacAccessory {
   private readonly log: Logger;
 
   private readonly name: string;
+  private readonly model: string;
   private readonly connectionConfig: { deviceId: string; localKey: string; deviceIp: string };
   private readonly findButtonEnabled: boolean;
   private readonly batteryInformationEnabled: boolean;
@@ -33,6 +34,13 @@ export class EufyRobovacAccessory {
     this.log = log;
 
     this.name = accessory.displayName;
+
+    if (config.model) {
+      this.model = config.model;
+    } else {
+      log.warn("No model configured. This is required for v4.0.0 and later. Please set the correct model in the plugin config.");
+      this.model = "T0000";
+    }
     this.connectionConfig = {
       deviceId: config.deviceId,
       localKey: config.localKey,
@@ -80,7 +88,7 @@ export class EufyRobovacAccessory {
       this.errorSensorService.getCharacteristic(this.platform.Characteristic.MotionDetected).onGet(this.getErrorStatus.bind(this));
     }
 
-    this.roboVac = new RoboVac(this.connectionConfig, this.updateCharacteristics.bind(this), this.cachingDuration, this.log);
+    this.roboVac = new RoboVac(this.connectionConfig, this.model, this.updateCharacteristics.bind(this), this.cachingDuration, this.log);
 
     this.log.info("Finished initializing accessory:", this.name);
   }

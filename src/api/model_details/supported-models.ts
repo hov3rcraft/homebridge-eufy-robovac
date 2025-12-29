@@ -198,8 +198,8 @@ export const SUPPORTED_ROBOVAC_MODELS: ReadonlyArray<SupportedRobovacModel> = [
     modelDetailsClass: T2280RobovacModelDetails,
   },
   {
-    modelId: "Default",
-    modelName: "try this if your model is not listed",
+    modelId: "T0000",
+    modelName: "default",
     modelDetailsClass: DefaultRobovacModelDetails,
   },
 ];
@@ -208,3 +208,25 @@ export const SUPPORTED_ROBOVAC_MODELS: ReadonlyArray<SupportedRobovacModel> = [
  * Fast lookup map from modelId -> supported model entry.
  */
 export const SUPPORTED_MODELS_BY_ID: ReadonlyMap<string, SupportedRobovacModel> = new Map(SUPPORTED_ROBOVAC_MODELS.map((m) => [m.modelId, m]));
+
+/**
+ * Create the correct RobovacModelDetails instance from just a modelId.
+ */
+export function createModelDetailsFromModelId(modelId: string): RobovacModelDetails {
+  const entry = SUPPORTED_MODELS_BY_ID.get(modelId);
+  if (!entry) {
+    throw new Error(`Unsupported Robovac modelId '${modelId}'. Supported modelIds: ${Array.from(SUPPORTED_MODELS_BY_ID.keys()).join(", ")}`);
+  }
+
+  return new entry.modelDetailsClass(entry.modelId, entry.modelName);
+}
+
+/**
+ * Generate config.schema.json model enum entries
+ *
+ * [...SUPPORTED_ROBOVAC_MODELS]
+ *  .sort((a, b) => a.modelName.localeCompare(b.modelName))
+ *  .forEach((model) => {
+ *    console.log(`{ "title": "${model.modelName} (${model.modelId})", "enum": ["${model.modelId}"] },`);
+ * });
+ */

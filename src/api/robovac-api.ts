@@ -4,6 +4,7 @@ import TuyAPI from "tuyapi";
 import { RobovacModelDetails } from "./model_details/robovac-model-details";
 import { createModelDetailsFromModelId } from "./model_details/supported-models";
 import { RobovacCommand, RobovacCommandValueType, StringCommandValueMapping } from "./robovac-command";
+import { RaceStatus } from "../race-status";
 
 interface RobovacResponse {
   devId: string;
@@ -25,12 +26,26 @@ export class RoboVac {
   log: Logger;
   consoleDebugLog: boolean;
 
+  dataReceivedCallback?: (status: RobovacStatus) => void;
+  runningUpdateCallback?: (running: boolean) => void;
+  workStatusUpdateCallback?: (workStatus: string) => void;
+  returnHomeUpdateCallback?: (returnHome: boolean) => void;
+  findRobotUpdateCallback?: (findRobot: boolean) => void;
+  batteryLevelUpdateCallback?: (batteryLevel: number) => void;
+  errorCodeUpdateCallback?: (errorCode: StringCommandValueMapping) => void;
+
   constructor(
     config: { deviceId: string; localKey: string; deviceIp: string },
     model: string,
-    dataReceivedCallback: (status: RobovacStatus) => void,
     cachingDuration: number,
-    log: Logger = new ConsoleLogger()
+    log: Logger = new ConsoleLogger(),
+    runningUpdateCallback?: (running: boolean) => void,
+    workStatusUpdateCallback?: (workStatus: string) => void,
+    returnHomeUpdateCallback?: (returnHome: boolean) => void,
+    findRobotUpdateCallback?: (findRobot: boolean) => void,
+    batteryLevelUpdateCallback?: (batteryLevel: number) => void,
+    errorCodeUpdateCallback?: (errorCode: StringCommandValueMapping) => void,
+    dataReceivedCallback?: (status: RobovacStatus) => void
   ) {
     this.log = log;
     if (log instanceof ConsoleLogger) {
@@ -38,6 +53,14 @@ export class RoboVac {
     } else {
       this.consoleDebugLog = false;
     }
+
+    this.runningUpdateCallback = runningUpdateCallback;
+    this.workStatusUpdateCallback = workStatusUpdateCallback;
+    this.returnHomeUpdateCallback = returnHomeUpdateCallback;
+    this.findRobotUpdateCallback = findRobotUpdateCallback;
+    this.batteryLevelUpdateCallback = batteryLevelUpdateCallback;
+    this.errorCodeUpdateCallback = errorCodeUpdateCallback;
+    this.dataReceivedCallback = dataReceivedCallback;
 
     this.modelDetails = createModelDetailsFromModelId(model);
     this.cachingDuration = cachingDuration;
@@ -74,7 +97,9 @@ export class RoboVac {
 
       if (data.dps) {
         this.dataReceived(data);
-        dataReceivedCallback(data);
+        if (this.dataReceivedCallback) {
+          this.dataReceivedCallback(data);
+        }
       }
     });
 
@@ -87,7 +112,9 @@ export class RoboVac {
 
       if (data.dps) {
         this.dataReceived(data);
-        dataReceivedCallback(data);
+        if (this.dataReceivedCallback) {
+          this.dataReceivedCallback(data);
+        }
       }
     });
 
@@ -275,34 +302,64 @@ export class RoboVac {
     }
   }
 
-  async getRunning(): Promise<boolean | undefined> {
-    const robovacStatus = await this.getStatus();
-    return <boolean | undefined>robovacStatus[RobovacCommand.RUNNING];
+  async getRunning(raceStatus?: RaceStatus): Promise<boolean | undefined> {
+    const robovac_status = await this.getStatus();
+    const running = <boolean | undefined>robovac_status[RobovacCommand.RUNNING];
+    if (raceStatus && !raceStatus.isRunning() && this.runningUpdateCallback && running) {
+      this.runningUpdateCallback(running);
+      this.log.info(`getRunning was late to the party [race id: ${raceStatus.raceId}].`);
+    }
+    return running;
   }
 
-  async getWorkStatus(): Promise<string | undefined> {
-    const robovacStatus = await this.getStatus();
-    return <string | undefined>robovacStatus[RobovacCommand.WORK_STATUS];
+  async getWorkStatus(raceStatus?: RaceStatus): Promise<string | undefined> {
+    const robovac_status = await this.getStatus();
+    const work_status = <string | undefined>robovac_status[RobovacCommand.WORK_STATUS];
+    if (raceStatus && !raceStatus.isRunning() && this.workStatusUpdateCallback && work_status) {
+      this.workStatusUpdateCallback(work_status);
+      this.log.info(`getRunning was late to the party [race id: ${raceStatus.raceId}].`);
+    }
+    return work_status;
   }
 
-  async getGoHome(): Promise<boolean | undefined> {
-    const robovacStatus = await this.getStatus();
-    return <boolean | undefined>robovacStatus[RobovacCommand.RETURN_HOME];
+  async getGoHome(raceStatus?: RaceStatus): Promise<boolean | undefined> {
+    const robovac_status = await this.getStatus();
+    const return_home = <boolean | undefined>robovac_status[RobovacCommand.RETURN_HOME];
+    if (raceStatus && !raceStatus.isRunning() && this.returnHomeUpdateCallback && return_home) {
+      this.returnHomeUpdateCallback(return_home);
+      this.log.info(`getRunning was late to the party [race id: ${raceStatus.raceId}].`);
+    }
+    return return_home;
   }
 
-  async getFindRobot(): Promise<boolean | undefined> {
-    const robovacStatus = await this.getStatus();
-    return <boolean | undefined>robovacStatus[RobovacCommand.FIND_ROBOT];
+  async getFindRobot(raceStatus?: RaceStatus): Promise<boolean | undefined> {
+    const robovac_status = await this.getStatus();
+    const find_robot = <boolean | undefined>robovac_status[RobovacCommand.FIND_ROBOT];
+    if (raceStatus && !raceStatus.isRunning() && this.findRobotUpdateCallback && find_robot) {
+      this.findRobotUpdateCallback(find_robot);
+      this.log.info(`getRunning was late to the party [race id: ${raceStatus.raceId}].`);
+    }
+    return find_robot;
   }
 
-  async getBatteryLevel(): Promise<number | undefined> {
-    const robovacStatus = await this.getStatus();
-    return <number | undefined>robovacStatus[RobovacCommand.BATTERY_LEVEL];
+  async getBatteryLevel(raceStatus?: RaceStatus): Promise<number | undefined> {
+    const robovac_status = await this.getStatus();
+    const battery_level = <number | undefined>robovac_status[RobovacCommand.BATTERY_LEVEL];
+    if (raceStatus && !raceStatus.isRunning() && this.batteryLevelUpdateCallback && battery_level) {
+      this.batteryLevelUpdateCallback(battery_level);
+      this.log.info(`getRunning was late to the party [race id: ${raceStatus.raceId}].`);
+    }
+    return battery_level;
   }
 
-  async getErrorCode(): Promise<StringCommandValueMapping | undefined> {
-    const robovacStatus = await this.getStatus();
-    return <StringCommandValueMapping | undefined>robovacStatus[RobovacCommand.ERROR];
+  async getErrorCode(raceStatus?: RaceStatus): Promise<StringCommandValueMapping | undefined> {
+    const robovac_status = await this.getStatus();
+    const error_code = <StringCommandValueMapping | undefined>robovac_status[RobovacCommand.ERROR];
+    if (raceStatus && !raceStatus.isRunning() && this.errorCodeUpdateCallback && error_code) {
+      this.errorCodeUpdateCallback(error_code);
+      this.log.info(`getRunning was late to the party [race id: ${raceStatus.raceId}].`);
+    }
+    return error_code;
   }
 
   getRunningCached(): boolean | undefined {

@@ -6,6 +6,8 @@ import { Logger } from "./console-logger";
 import { RobovacCommand, StringCommandValueMapping } from "./api/robovac-command";
 import { error } from "node:console";
 import { DeviceError } from "./api/device-errors";
+import { RaceStatus } from "./race-status";
+import { PromiseTimeoutException } from "./promise-timeout-exception";
 
 export class EufyRobovacAccessory {
   private readonly platform: EufyRobovacPlatform;
@@ -25,7 +27,7 @@ export class EufyRobovacAccessory {
   private readonly batteryInformationEnabled: boolean;
   private readonly errorSensorEnabled: boolean;
 
-  private readonly callbackTimeout = 1000;
+  private readonly callbackTimeout = 1500;
   private readonly cachingDuration = 60000;
   private readonly lowBatteryThreshold = 10;
 
@@ -91,7 +93,19 @@ export class EufyRobovacAccessory {
       this.errorSensorService.getCharacteristic(this.platform.Characteristic.MotionDetected).onGet(this.getErrorStatus.bind(this));
     }
 
-    this.roboVac = new RoboVac(this.connectionConfig, this.model, this.updateCharacteristics.bind(this), this.cachingDuration, this.log);
+    this.roboVac = new RoboVac(
+      this.connectionConfig,
+      this.model,
+      this.cachingDuration,
+      this.log,
+      this.updateRunning.bind(this),
+      this.updateWorkStatus.bind(this),
+      undefined,
+      this.updateFindRobot.bind(this),
+      this.updateBatteryLevel.bind(this),
+      this.updateErrorStatus.bind(this),
+      this.updateAllCharacteristics.bind(this)
+    );
 
     this.log.info("Finished initializing accessory:", this.name);
   }
@@ -101,121 +115,176 @@ export class EufyRobovacAccessory {
    * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
    */
   async getRunning(): Promise<CharacteristicValue> {
-    this.log.debug(`getRunning for ${this.name}`);
+    const raceStatus = new RaceStatus();
+    this.log.debug(`getRunning for ${this.name}. [race id: ${raceStatus.raceId}]`);
 
     let running: boolean | undefined = undefined;
     try {
       running = await Promise.race([
-        this.roboVac.getRunning(),
+        this.roboVac.getRunning(raceStatus),
         new Promise<undefined>((resolve, reject) => {
-          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
+          setTimeout(() => {
+            raceStatus.setRaceOver();
+            reject(new PromiseTimeoutException(this.callbackTimeout));
+          }, this.callbackTimeout);
         }),
       ]);
-    } catch {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
 
-    if (running === undefined) {
+      if (running === undefined) {
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+      }
+      return running;
+    } catch (error) {
+      if (error instanceof PromiseTimeoutException) {
+        this.log.debug(`${this.name} lost its promise race for getRunning(). [race id: ${raceStatus.raceId}]`);
+      } else {
+        this.log.error(`An error occured during getRunning() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
+      }
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    return running;
   }
 
   async getFindRobot(): Promise<CharacteristicValue> {
-    this.log.debug(`getFindRobot for ${this.name}`);
+    const raceStatus = new RaceStatus();
+    this.log.debug(`getFindRobot for ${this.name}. [race id: ${raceStatus.raceId}]`);
 
     let find_robot: boolean | undefined = undefined;
     try {
       find_robot = await Promise.race([
-        this.roboVac.getFindRobot(),
+        this.roboVac.getFindRobot(raceStatus),
         new Promise<undefined>((resolve, reject) => {
-          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
+          setTimeout(() => {
+            raceStatus.setRaceOver();
+            reject(new PromiseTimeoutException(this.callbackTimeout));
+          }, this.callbackTimeout);
         }),
       ]);
-    } catch {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
 
-    if (find_robot === undefined) {
+      if (find_robot === undefined) {
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+      }
+      return find_robot;
+    } catch (error) {
+      if (error instanceof PromiseTimeoutException) {
+        this.log.debug(`${this.name} lost its promise race for getFindRobot(). [race id: ${raceStatus.raceId}]`);
+      } else {
+        this.log.error(`An error occured during getFindRobot() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
+      }
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    return find_robot;
   }
 
   async getLowBattery(): Promise<CharacteristicValue> {
-    this.log.debug(`getLowBattery for ${this.name}`);
+    const raceStatus = new RaceStatus();
+    this.log.debug(`getLowBattery for ${this.name}. [race id: ${raceStatus.raceId}]`);
 
     let battery_level: number | undefined = undefined;
     try {
       battery_level = await Promise.race([
-        this.roboVac.getBatteryLevel(),
+        this.roboVac.getBatteryLevel(raceStatus),
         new Promise<undefined>((resolve, reject) => {
-          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
+          setTimeout(() => {
+            raceStatus.setRaceOver();
+            reject(new PromiseTimeoutException(this.callbackTimeout));
+          }, this.callbackTimeout);
         }),
       ]);
-    } catch {
+
+      if (battery_level === undefined) {
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+      }
+      return battery_level <= this.lowBatteryThreshold;
+    } catch (error) {
+      if (error instanceof PromiseTimeoutException) {
+        this.log.debug(`${this.name} lost its promise race for getLowBattery(). [race id: ${raceStatus.raceId}]`);
+      } else {
+        this.log.error(`An error occured during getLowBattery() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
+      }
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    if (battery_level === undefined) {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-    return battery_level <= this.lowBatteryThreshold;
   }
 
   async getBatteryLevel(): Promise<CharacteristicValue> {
-    this.log.debug(`getBatteryLevel for ${this.name}`);
+    const raceStatus = new RaceStatus();
+    this.log.debug(`getBatteryLevel for ${this.name}. [race id: ${raceStatus.raceId}]`);
 
     let battery_level: number | undefined = undefined;
     try {
       battery_level = await Promise.race([
-        this.roboVac.getBatteryLevel(),
+        this.roboVac.getBatteryLevel(raceStatus),
         new Promise<undefined>((resolve, reject) => {
-          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
+          setTimeout(() => {
+            raceStatus.setRaceOver();
+            reject(new PromiseTimeoutException(this.callbackTimeout));
+          }, this.callbackTimeout);
         }),
       ]);
-    } catch {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
 
-    if (battery_level === undefined) {
+      if (battery_level === undefined) {
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+      }
+      return battery_level;
+    } catch (error) {
+      if (error instanceof PromiseTimeoutException) {
+        this.log.debug(`${this.name} lost its promise race for getBatteryLevel(). [race id: ${raceStatus.raceId}]`);
+      } else {
+        this.log.error(`An error occured during getBatteryLevel() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
+      }
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    return battery_level;
   }
 
   async getCharging(): Promise<CharacteristicValue> {
-    this.log.debug(`getCharging for ${this.name}`);
+    const raceStatus = new RaceStatus();
+    this.log.debug(`getCharging for ${this.name}. [race id: ${raceStatus.raceId}]`);
 
     let work_status: string | undefined = undefined;
     try {
       work_status = await Promise.race([
-        this.roboVac.getWorkStatus(),
+        this.roboVac.getWorkStatus(raceStatus),
         new Promise<undefined>((resolve, reject) => {
-          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
+          setTimeout(() => {
+            raceStatus.setRaceOver();
+            reject(new PromiseTimeoutException(this.callbackTimeout));
+          }, this.callbackTimeout);
         }),
       ]);
-    } catch {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
 
-    if (work_status === undefined) {
+      if (work_status === undefined) {
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+      }
+      return this.workStatusToChargingState(work_status);
+    } catch (error) {
+      if (error instanceof PromiseTimeoutException) {
+        this.log.debug(`${this.name} lost its promise race for getCharging(). [race id: ${raceStatus.raceId}]`);
+      } else {
+        this.log.error(`An error occured during getCharging() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
+      }
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    return this.workStatusToChargingState(work_status);
   }
 
   async getErrorStatus(): Promise<CharacteristicValue> {
-    this.log.debug(`getErrorStatus for ${this.name}`);
+    const raceStatus = new RaceStatus();
+    this.log.debug(`getErrorStatus for ${this.name}. [race id: ${raceStatus.raceId}]`);
 
     try {
       const device_error = await Promise.race([
-        this.roboVac.getErrorCode(),
+        this.roboVac.getErrorCode(raceStatus),
         new Promise<undefined>((resolve, reject) => {
-          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
+          setTimeout(() => {
+            raceStatus.setRaceOver();
+            reject(new PromiseTimeoutException(this.callbackTimeout));
+          }, this.callbackTimeout);
         }),
       ]);
       return !(device_error === undefined || device_error.id === DeviceError.NO_ERROR.id);
-    } catch {
+    } catch (error) {
+      if (error instanceof PromiseTimeoutException) {
+        this.log.debug(`${this.name} lost its promise race for getErrorStatus(). [race id: ${raceStatus.raceId}]`);
+      } else {
+        this.log.error(`An error occured during getErrorStatus() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
+      }
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
   }
@@ -224,6 +293,10 @@ export class EufyRobovacAccessory {
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
    */
+  setIdentify(value: any) {
+    this.log.info("Triggered SET Identify:", value);
+  }
+
   async setRunning(state: CharacteristicValue) {
     this.log.debug(`setRunning for ${this.name} set to ${state}`);
 
@@ -235,76 +308,94 @@ export class EufyRobovacAccessory {
       return;
     }
 
-    try {
-      return await Promise.race([
-        state ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true),
-        new Promise<void>((resolve, reject) => {
-          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-        }),
-      ]);
-    } catch {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    if (state) {
+      this.roboVac.setPlayPause(true).catch((error) => {
+        this.log.error(`An error occured during setRunning(ON) for ${this.name}.`, error);
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+      });
+    } else {
+      this.roboVac.setGoHome(true).catch((error) => {
+        this.log.error(`An error occured during setRunning(OFF) for ${this.name}.`, error);
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+      });
     }
   }
 
   async setFindRobot(state: CharacteristicValue) {
     this.log.debug(`setFindRobot for ${this.name} set to ${state}`);
-
-    try {
-      return await Promise.race([
-        this.roboVac.setFindRobot(state as boolean),
-        new Promise<void>((resolve, reject) => {
-          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-        }),
-      ]);
-    } catch {
+    this.roboVac.setFindRobot(state as boolean).catch((error) => {
+      this.log.error(`An error occured during setFindRobot() for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    });
+  }
+
+  /*
+   * Handles characteristic updates from the API
+   */
+  private updateRunning(running: boolean) {
+    this.log.debug(`updating ${RobovacCommand.RUNNING} for ${this.name} to ${running}`);
+    this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, running);
+  }
+
+  private updateFindRobot(find_robot: boolean) {
+    if (this.findRobotService) {
+      this.log.debug(`updating ${RobovacCommand.FIND_ROBOT} for ${this.name} to ${find_robot}`);
+      this.findRobotService.updateCharacteristic(this.platform.Characteristic.On, find_robot);
     }
   }
 
-  /**
-   * Handle requests to set the "Identify" characteristic
-   */
-  setIdentify(value: any) {
-    this.log.info("Triggered SET Identify:", value);
+  private updateBatteryLevel(battery_level: number) {
+    if (this.batteryService) {
+      this.log.debug(`updating ${RobovacCommand.BATTERY_LEVEL} for ${this.name} to ${battery_level}`);
+      this.batteryService.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, battery_level <= this.lowBatteryThreshold);
+      this.batteryService.updateCharacteristic(this.platform.Characteristic.BatteryLevel, battery_level);
+    }
   }
 
-  updateCharacteristics(status: RobovacStatus) {
+  private updateWorkStatus(work_status: string) {
+    if (this.batteryService) {
+      this.log.debug(`updating ${RobovacCommand.WORK_STATUS} for ${this.name} to ${work_status}`);
+      this.batteryService.updateCharacteristic(this.platform.Characteristic.ChargingState, this.workStatusToChargingState(work_status));
+    }
+  }
+
+  private updateErrorStatus(error_status: StringCommandValueMapping | undefined) {
+    if (this.errorSensorService) {
+      const is_error = error_status !== undefined && error_status.id !== DeviceError.NO_ERROR.id;
+      this.log.debug(`updating Error Sensor status for ${this.name} to ${is_error}`);
+      this.errorSensorService.updateCharacteristic(this.platform.Characteristic.MotionDetected, is_error);
+      if (is_error) this.log.info(`${this.name} reported a device error: ${error_status.friendly_message}`);
+    }
+  }
+
+  updateAllCharacteristics(status: RobovacStatus) {
     this.log.debug(`updateCharacteristics for ${this.name}`);
     let counter = 0;
     const status_running = status[RobovacCommand.RUNNING] as boolean | undefined;
     if (status_running !== undefined) {
-      this.log.debug(`updating ${RobovacCommand.RUNNING} for ${this.name} to ${status_running}`);
-      this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, status_running);
+      this.updateRunning(status_running);
       counter++;
     }
     const status_find_robot = status[RobovacCommand.FIND_ROBOT] as boolean | undefined;
     if (this.findRobotService && status_find_robot !== undefined) {
-      this.log.debug(`updating ${RobovacCommand.FIND_ROBOT} for ${this.name} to ${status_find_robot}`);
-      this.findRobotService.updateCharacteristic(this.platform.Characteristic.On, status_find_robot);
+      this.updateFindRobot(status_find_robot);
       counter++;
     }
     if (this.batteryService) {
       const status_battery_level = status[RobovacCommand.BATTERY_LEVEL] as number | undefined;
       if (status_battery_level !== undefined) {
-        this.log.debug(`updating ${RobovacCommand.BATTERY_LEVEL} for ${this.name} to ${status_battery_level}`);
-        this.batteryService.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, status_battery_level <= this.lowBatteryThreshold);
-        this.batteryService.updateCharacteristic(this.platform.Characteristic.BatteryLevel, status_battery_level);
+        this.updateBatteryLevel(status_battery_level);
         counter++;
       }
       const status_work_status = status[RobovacCommand.WORK_STATUS] as string | undefined;
       if (status_work_status !== undefined) {
-        this.log.debug(`updating ${RobovacCommand.WORK_STATUS} for ${this.name} to ${status_work_status}`);
-        this.batteryService.updateCharacteristic(this.platform.Characteristic.ChargingState, this.workStatusToChargingState(status_work_status));
+        this.updateWorkStatus(status_work_status);
         counter++;
       }
     }
     if (this.errorSensorService) {
       const status_error = status[RobovacCommand.ERROR] as StringCommandValueMapping | undefined;
-      const is_error = status_error !== undefined && status_error.id !== DeviceError.NO_ERROR.id;
-      this.log.debug(`updating Error Sensor status for ${this.name} to ${is_error}`);
-      this.errorSensorService.updateCharacteristic(this.platform.Characteristic.MotionDetected, is_error);
-      if (is_error) this.log.info(`${this.name} reported a device error: ${status_error.friendly_message}`);
+      this.updateErrorStatus(status_error);
       counter++;
     }
     this.log.debug(`updateCharacteristics for ${this.name} complete - updated ${counter} characteristics.`);

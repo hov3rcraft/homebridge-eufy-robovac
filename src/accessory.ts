@@ -1,8 +1,8 @@
-import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue } from "homebridge";
 
-import { EufyRobovacPlatform } from './platform';
-import { ErrorCode, RoboVac, StatusDps, StatusResponse, WorkStatus, getErrorCodeFriendlyName, statusDpsFriendlyNames } from './robovac-api';
-import { Logger } from './consoleLogger';
+import { EufyRobovacPlatform } from "./platform";
+import { ErrorCode, RoboVac, StatusDps, StatusResponse, WorkStatus, getErrorCodeFriendlyName, statusDpsFriendlyNames } from "./api/robovac-api";
+import { Logger } from "./console-logger";
 
 export class EufyRobovacAccessory {
   private readonly platform: EufyRobovacPlatform;
@@ -21,14 +21,12 @@ export class EufyRobovacAccessory {
   private readonly batteryInformationEnabled: boolean;
   private readonly errorSensorEnabled: boolean;
 
-
   private readonly callbackTimeout = 3000;
   private readonly cachingDuration = 60000;
   private readonly lowBatteryThreshold = 10;
 
   constructor(platform: EufyRobovacPlatform, accessory: PlatformAccessory, config: any, log: Logger) {
-
-    log.debug('Initializing EufyRobovacAccessory...');
+    log.debug("Initializing EufyRobovacAccessory...");
 
     this.platform = platform;
     this.accessory = accessory;
@@ -38,7 +36,7 @@ export class EufyRobovacAccessory {
     this.connectionConfig = {
       deviceId: config.deviceId,
       localKey: config.localKey,
-      deviceIp: config.deviceIp
+      deviceIp: config.deviceIp,
     };
     this.findButtonEnabled = config.findButtonEnabled;
     this.batteryInformationEnabled = config.batteryInformationEnabled;
@@ -47,8 +45,8 @@ export class EufyRobovacAccessory {
     // set accessory information
     this.informationService = this.accessory.getService(this.platform.Service.AccessoryInformation)!;
     this.informationService.getCharacteristic(this.platform.Characteristic.Identify).onSet(this.setIdentify.bind(this));
-    this.informationService.setCharacteristic(this.platform.Characteristic.Manufacturer, 'Eufy');
-    this.informationService.setCharacteristic(this.platform.Characteristic.Model, 'RoboVac');
+    this.informationService.setCharacteristic(this.platform.Characteristic.Manufacturer, "Eufy");
+    this.informationService.setCharacteristic(this.platform.Characteristic.Model, "RoboVac");
     this.informationService.setCharacteristic(this.platform.Characteristic.Name, this.name);
     this.informationService.setCharacteristic(this.platform.Characteristic.SerialNumber, config.deviceId);
     this.informationService.setCharacteristic(this.platform.Characteristic.FirmwareRevision, "unknown");
@@ -59,39 +57,32 @@ export class EufyRobovacAccessory {
     } else {
       this.vacuumService = this.accessory.getService("Vacuum") || this.accessory.addService(this.platform.Service.Fan, "Vacuum");
     }
-    this.vacuumService.getCharacteristic(this.platform.Characteristic.On)
-      .onGet(this.getRunning.bind(this))
-      .onSet(this.setRunning.bind(this));
+    this.vacuumService.getCharacteristic(this.platform.Characteristic.On).onGet(this.getRunning.bind(this)).onSet(this.setRunning.bind(this));
 
     // create find robot service
     if (this.findButtonEnabled) {
       this.findRobotService = this.accessory.getService("FindRobot") || this.accessory.addService(this.platform.Service.Switch, "FindRobot", "FIND_ROBOT");
-      this.findRobotService.getCharacteristic(this.platform.Characteristic.On)
-        .onGet(this.getFindRobot.bind(this))
-        .onSet(this.setFindRobot.bind(this));
+      this.findRobotService.getCharacteristic(this.platform.Characteristic.On).onGet(this.getFindRobot.bind(this)).onSet(this.setFindRobot.bind(this));
     }
 
     // create battery service
     if (this.batteryInformationEnabled) {
       this.batteryService = this.accessory.getService("Battery") || this.accessory.addService(this.platform.Service.Battery, "Battery", "BATTERY");
-      this.batteryService.getCharacteristic(this.platform.Characteristic.StatusLowBattery)
-        .onGet(this.getLowBattery.bind(this));
-      this.batteryService.getCharacteristic(this.platform.Characteristic.BatteryLevel)
-        .onGet(this.getBatteryLevel.bind(this));
-      this.batteryService.getCharacteristic(this.platform.Characteristic.ChargingState)
-        .onGet(this.getCharging.bind(this));
+      this.batteryService.getCharacteristic(this.platform.Characteristic.StatusLowBattery).onGet(this.getLowBattery.bind(this));
+      this.batteryService.getCharacteristic(this.platform.Characteristic.BatteryLevel).onGet(this.getBatteryLevel.bind(this));
+      this.batteryService.getCharacteristic(this.platform.Characteristic.ChargingState).onGet(this.getCharging.bind(this));
     }
 
     // create error sensor service
     if (this.errorSensorEnabled) {
-      this.errorSensorService = this.accessory.getService("ErrorSensor") || this.accessory.addService(this.platform.Service.MotionSensor, "ErrorSensor", "ERROR_SENSOR");
-      this.errorSensorService.getCharacteristic(this.platform.Characteristic.MotionDetected)
-        .onGet(this.getErrorStatus.bind(this))
+      this.errorSensorService =
+        this.accessory.getService("ErrorSensor") || this.accessory.addService(this.platform.Service.MotionSensor, "ErrorSensor", "ERROR_SENSOR");
+      this.errorSensorService.getCharacteristic(this.platform.Characteristic.MotionDetected).onGet(this.getErrorStatus.bind(this));
     }
 
     this.roboVac = new RoboVac(this.connectionConfig, this.updateCharacteristics.bind(this), this.cachingDuration, this.log);
 
-    this.log.info('Finished initializing accessory:', this.name);
+    this.log.info("Finished initializing accessory:", this.name);
   }
 
   /**
@@ -106,7 +97,7 @@ export class EufyRobovacAccessory {
         this.roboVac.getRunning(),
         new Promise<boolean>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-        })
+        }),
       ]);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -121,7 +112,7 @@ export class EufyRobovacAccessory {
         this.roboVac.getFindRobot(),
         new Promise<boolean>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-        })
+        }),
       ]);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -136,7 +127,7 @@ export class EufyRobovacAccessory {
         this.roboVac.getBatteryLevel(),
         new Promise<number>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-        })
+        }),
       ]);
       return battery_level <= this.lowBatteryThreshold;
     } catch {
@@ -152,7 +143,7 @@ export class EufyRobovacAccessory {
         this.roboVac.getBatteryLevel(),
         new Promise<number>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-        })
+        }),
       ]);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -167,7 +158,7 @@ export class EufyRobovacAccessory {
         this.roboVac.getWorkStatus(),
         new Promise<WorkStatus>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-        })
+        }),
       ]);
       return this.workStatusToChargingState(work_status);
     } catch {
@@ -183,7 +174,7 @@ export class EufyRobovacAccessory {
         this.roboVac.getErrorCode(),
         new Promise<string>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-        })
+        }),
       ]);
       return error_code !== ErrorCode.NO_ERROR;
     } catch {
@@ -200,16 +191,18 @@ export class EufyRobovacAccessory {
 
     if (!state && this.roboVac.getRunningCached() == false) {
       // don't send additional "GO HOME" command when already off
-      this.log.debug(`setRunning for ${this.name} set to ${state} received, but not sending GO HOME command because according to cache the device is already off`);
+      this.log.debug(
+        `setRunning for ${this.name} set to ${state} received, but not sending GO HOME command because according to cache the device is already off`
+      );
       return;
     }
 
     try {
       return await Promise.race([
-        (state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true),
+        state ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true),
         new Promise<void>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-        })
+        }),
       ]);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -224,7 +217,7 @@ export class EufyRobovacAccessory {
         this.roboVac.setFindRobot(state as boolean),
         new Promise<void>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-        })
+        }),
       ]);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -235,7 +228,7 @@ export class EufyRobovacAccessory {
    * Handle requests to set the "Identify" characteristic
    */
   setIdentify(value: any) {
-    this.log.info('Triggered SET Identify:', value);
+    this.log.info("Triggered SET Identify:", value);
   }
 
   updateCharacteristics(statusResponse: StatusResponse) {
@@ -254,24 +247,30 @@ export class EufyRobovacAccessory {
     if (this.batteryService) {
       if (statusResponse.dps[StatusDps.BATTERY_LEVEL] !== undefined) {
         this.log.debug(`updating ${statusDpsFriendlyNames.get(StatusDps.BATTERY_LEVEL)} for ${this.name} to ${statusResponse.dps[StatusDps.BATTERY_LEVEL]}`);
-        this.batteryService.updateCharacteristic(this.platform.Characteristic.StatusLowBattery, statusResponse.dps[StatusDps.BATTERY_LEVEL] <= this.lowBatteryThreshold);
+        this.batteryService.updateCharacteristic(
+          this.platform.Characteristic.StatusLowBattery,
+          statusResponse.dps[StatusDps.BATTERY_LEVEL] <= this.lowBatteryThreshold
+        );
         this.batteryService.updateCharacteristic(this.platform.Characteristic.BatteryLevel, statusResponse.dps[StatusDps.BATTERY_LEVEL]);
         counter++;
       }
       if (statusResponse.dps[StatusDps.WORK_STATUS] !== undefined) {
         this.log.debug(`updating ${statusDpsFriendlyNames.get(StatusDps.WORK_STATUS)} for ${this.name} to ${statusResponse.dps[StatusDps.WORK_STATUS]}`);
-        this.batteryService.updateCharacteristic(this.platform.Characteristic.ChargingState, this.workStatusToChargingState(statusResponse.dps[StatusDps.WORK_STATUS] as WorkStatus));
+        this.batteryService.updateCharacteristic(
+          this.platform.Characteristic.ChargingState,
+          this.workStatusToChargingState(statusResponse.dps[StatusDps.WORK_STATUS] as WorkStatus)
+        );
         counter++;
       }
     }
     if (this.errorSensorService && statusResponse.dps[StatusDps.ERROR_CODE] !== undefined) {
-      const is_error = (statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
+      const is_error = statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR;
       this.log.debug(`updating Error Sensor status for ${this.name} to ${is_error}`);
       this.errorSensorService.updateCharacteristic(this.platform.Characteristic.MotionDetected, is_error);
       if (is_error) this.log.info(`${this.name} reported a device error: ${getErrorCodeFriendlyName(statusResponse.dps[StatusDps.ERROR_CODE])}`);
       counter++;
     }
-    this.log.debug(`updateCharacteristics for ${this.name} complete - updated ${counter} characteristics.`)
+    this.log.debug(`updateCharacteristics for ${this.name} complete - updated ${counter} characteristics.`);
   }
 
   workStatusToChargingState(workStatus: WorkStatus): number {

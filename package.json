@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Eufy Robovac",
   "name": "@hov3rcraft/homebridge-eufy-robovac",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "description": "Homebridge support for Eufy RoboVac",
   "license": "MIT",
   "repository": {

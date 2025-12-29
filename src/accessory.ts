@@ -297,7 +297,7 @@ export class EufyRobovacAccessory {
     this.log.info("Triggered SET Identify:", value);
   }
 
-  async setRunning(state: CharacteristicValue) {
+  setRunning(state: CharacteristicValue) {
     this.log.debug(`setRunning for ${this.name} set to ${state}`);
 
     if (!state && this.roboVac.getRunningCached() == false) {
@@ -321,7 +321,7 @@ export class EufyRobovacAccessory {
     }
   }
 
-  async setFindRobot(state: CharacteristicValue) {
+  setFindRobot(state: CharacteristicValue) {
     this.log.debug(`setFindRobot for ${this.name} set to ${state}`);
     this.roboVac.setFindRobot(state as boolean).catch((error) => {
       this.log.error(`An error occured during setFindRobot() for ${this.name}.`, error);

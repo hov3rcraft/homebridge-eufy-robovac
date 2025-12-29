@@ -146,10 +146,28 @@ export class RoboVac {
     for (const [dps_code, dps_value] of Object.entries(this.lastResponse.dps)) {
       const commandSpec = this.modelDetails.getCommandSpecByCode(Number(dps_code));
       if (commandSpec) {
-        if (commandSpec.valueType === RobovacCommandValueType.STRING && commandSpec.stringValues) {
-          this.lastStatus[commandSpec.command] = commandSpec.stringValues[dps_value] ?? dps_value;
-        } else {
-          this.lastStatus[commandSpec.command] = dps_value;
+        switch (commandSpec.valueType) {
+          case RobovacCommandValueType.BOOLEAN:
+            if (typeof dps_value !== "boolean") {
+              this.log.warn(`Received unexpected BOOLEAN value for command ${commandSpec.command}:`, dps_value);
+            }
+            this.lastStatus[commandSpec.command] = dps_value;
+            break;
+          case RobovacCommandValueType.NUMBER:
+            if (typeof dps_value !== "number") {
+              this.log.warn(`Received unexpected NUMBER value for command ${commandSpec.command}:`, dps_value);
+            }
+            this.lastStatus[commandSpec.command] = dps_value;
+            break;
+          case RobovacCommandValueType.STRING:
+            if (typeof dps_value !== "string") {
+              this.log.warn(`Received unexpected STRING value for command ${commandSpec.command}:`, dps_value);
+            }
+            if (commandSpec.stringValues) {
+              this.lastStatus[commandSpec.command] = commandSpec.stringValues[dps_value] ?? dps_value;
+            } else {
+              this.lastStatus[commandSpec.command] = dps_value;
+            }
         }
       }
     }

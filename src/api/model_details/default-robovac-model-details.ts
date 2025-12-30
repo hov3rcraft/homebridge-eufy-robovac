@@ -1,4 +1,5 @@
 import { DeviceError } from "../device-errors";
+import { Direction } from "../direction";
 import { RobovacCommand, RobovacCommandSpec, RobovacCommandValueType } from "../robovac-command";
 import { RobovacModelDetails } from "./robovac-model-details";
 
@@ -12,6 +13,17 @@ const ROBOVAC_COMMAND_DEFAULTS_ARRAY: RobovacCommandSpec[] = [
     command: RobovacCommand.RUNNING,
     code: 2,
     valueType: RobovacCommandValueType.BOOLEAN,
+  },
+  {
+    command: RobovacCommand.DIRECTION,
+    code: 3,
+    valueType: RobovacCommandValueType.STRING,
+    stringValues: {
+      "forward": Direction.FORWARD,
+      "left": Direction.LEFT,
+      "right": Direction.RIGHT,
+      "back": Direction.BACK,
+    },
   },
   {
     command: RobovacCommand.WORK_STATUS,

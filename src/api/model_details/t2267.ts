@@ -1,4 +1,5 @@
 import { DeviceError } from "../device-errors";
+import { Direction } from "../direction";
 import { RobovacCommand, RobovacCommandValueType } from "../robovac-command";
 import { ROBOVAC_COMMAND_DEFAULTS } from "./default-robovac-model-details";
 import { RobovacModelDetails } from "./robovac-model-details";
@@ -11,6 +12,18 @@ export class T2267RobovacModelDetails extends RobovacModelDetails {
         command: RobovacCommand.RUNNING,
         code: 156,
         valueType: RobovacCommandValueType.BOOLEAN,
+      },
+      {
+        command: RobovacCommand.DIRECTION,
+        code: 155,
+        valueType: RobovacCommandValueType.STRING,
+        stringValues: {
+          "forward": Direction.FORWARD,
+          "left": Direction.LEFT,
+          "right": Direction.RIGHT,
+          "back": Direction.BACK,
+          "brake": Direction.BRAKE,
+        },
       },
       {
         command: RobovacCommand.WORK_STATUS,

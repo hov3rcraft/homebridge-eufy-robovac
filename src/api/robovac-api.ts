@@ -28,6 +28,7 @@ export class RoboVac {
 
   dataReceivedCallback?: (status: RobovacStatus) => void;
   runningUpdateCallback?: (running: boolean) => void;
+  directionUpdateCallback?: (direction: StringCommandValueMapping) => void;
   workStatusUpdateCallback?: (workStatus: string) => void;
   returnHomeUpdateCallback?: (returnHome: boolean) => void;
   findRobotUpdateCallback?: (findRobot: boolean) => void;
@@ -40,6 +41,7 @@ export class RoboVac {
     cachingDuration: number,
     log: Logger = new ConsoleLogger(),
     runningUpdateCallback?: (running: boolean) => void,
+    directionUpdateCallback?: (direction: StringCommandValueMapping) => void,
     workStatusUpdateCallback?: (workStatus: string) => void,
     returnHomeUpdateCallback?: (returnHome: boolean) => void,
     findRobotUpdateCallback?: (findRobot: boolean) => void,
@@ -55,6 +57,7 @@ export class RoboVac {
     }
 
     this.runningUpdateCallback = runningUpdateCallback;
+    this.directionUpdateCallback = directionUpdateCallback;
     this.workStatusUpdateCallback = workStatusUpdateCallback;
     this.returnHomeUpdateCallback = returnHomeUpdateCallback;
     this.findRobotUpdateCallback = findRobotUpdateCallback;
@@ -126,6 +129,7 @@ export class RoboVac {
     this.lastStatus = {
       [RobovacCommand.DEFAULT]: undefined,
       [RobovacCommand.RUNNING]: undefined,
+      [RobovacCommand.DIRECTION]: undefined,
       [RobovacCommand.WORK_STATUS]: undefined,
       [RobovacCommand.RETURN_HOME]: undefined,
       [RobovacCommand.FIND_ROBOT]: undefined,
@@ -330,6 +334,16 @@ export class RoboVac {
     return running;
   }
 
+  async getDirection(raceStatus?: RaceStatus): Promise<StringCommandValueMapping | undefined> {
+    const robovac_status = await this.getStatus();
+    const direction = <StringCommandValueMapping | undefined>robovac_status[RobovacCommand.DIRECTION];
+    if (raceStatus && !raceStatus.isRunning() && this.directionUpdateCallback && direction) {
+      this.directionUpdateCallback(direction);
+      this.log.info(`getDirection was late to the party [race id: ${raceStatus.raceId}].`);
+    }
+    return direction;
+  }
+
   async getWorkStatus(raceStatus?: RaceStatus): Promise<string | undefined> {
     const robovac_status = await this.getStatus();
     const work_status = <string | undefined>robovac_status[RobovacCommand.WORK_STATUS];
@@ -384,6 +398,10 @@ export class RoboVac {
     return this.lastStatusValid ? (this.lastStatus[RobovacCommand.RUNNING] as boolean | undefined) : undefined;
   }
 
+  getDirectionCached(): StringCommandValueMapping | undefined {
+    return this.lastStatusValid ? (this.lastStatus[RobovacCommand.DIRECTION] as StringCommandValueMapping | undefined) : undefined;
+  }
+
   getWorkStatusCached(): string | undefined {
     return this.lastStatusValid ? <string>this.lastStatus[RobovacCommand.WORK_STATUS] : undefined;
   }
@@ -406,6 +424,16 @@ export class RoboVac {
 
   async setPlayPause(newValue: boolean) {
     return this.set(RobovacCommand.RUNNING, newValue);
+  }
+
+  async setDirection(newValue: StringCommandValueMapping) {
+    const stringValues = this.modelDetails.getCommandSpecByCommand(RobovacCommand.DIRECTION)?.stringValues as Record<string, StringCommandValueMapping>;
+    const entry = Object.entries(stringValues).find(([, value]) => value.id === newValue.id);
+    if (!entry) {
+      throw new Error(`direction value '${JSON.stringify(newValue)}' is invalid for this device model.`);
+    }
+
+    return this.set(RobovacCommand.DIRECTION, entry[0]);
   }
 
   async setGoHome(newValue: boolean) {

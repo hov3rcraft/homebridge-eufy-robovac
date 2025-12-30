@@ -99,6 +99,7 @@ export class EufyRobovacAccessory {
       this.cachingDuration,
       this.log,
       this.updateRunning.bind(this),
+      undefined,
       this.updateWorkStatus.bind(this),
       undefined,
       this.updateFindRobot.bind(this),

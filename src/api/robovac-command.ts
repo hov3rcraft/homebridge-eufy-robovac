@@ -4,6 +4,7 @@
 export enum RobovacCommand {
   DEFAULT = "Default Property (ignore)",
   RUNNING = "Running",
+  DIRECTION = "Direction",
   WORK_STATUS = "Work Status",
   RETURN_HOME = "Return Home",
   FIND_ROBOT = "Find Robot",

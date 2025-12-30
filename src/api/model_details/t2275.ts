@@ -1,5 +1,6 @@
 import { DeviceError } from "../device-errors";
 import { RobovacCommand, RobovacCommandValueType } from "../robovac-command";
+import { WorkMode } from "../work-mode";
 import { ROBOVAC_COMMAND_DEFAULTS } from "./default-robovac-model-details";
 import { RobovacModelDetails } from "./robovac-model-details";
 
@@ -8,15 +9,15 @@ export class T2275RobovacModelDetails extends RobovacModelDetails {
     super(modelId, modelName, [
       ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.DEFAULT],
       {
-        command: RobovacCommand.RUNNING,
+        command: RobovacCommand.WORK_MODE,
         code: 152,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
-          "AA==": "small_room",
-          "AggN": "pause",
-          "AggG": "edge",
-          "BBoCCAE=": "auto",
-          "AggO": "nosweep",
+          "AA==": WorkMode.SMALL_ROOM,
+          "AggN": WorkMode.PAUSE,
+          "AggG": WorkMode.EDGE,
+          "BBoCCAE=": WorkMode.AUTO,
+          "AggO": WorkMode.NO_SWEEP,
         },
       },
       {

@@ -1,4 +1,6 @@
+import { FanSpeed } from "../fan-speed";
 import { RobovacCommand, RobovacCommandValueType } from "../robovac-command";
+import { WorkMode } from "../work-mode";
 import { ROBOVAC_COMMAND_DEFAULTS } from "./default-robovac-model-details";
 import { RobovacModelDetails } from "./robovac-model-details";
 
@@ -11,16 +13,16 @@ export class T2080RobovacModelDetails extends RobovacModelDetails {
       ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.BATTERY_LEVEL],
       ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.ERROR],
       {
-        command: RobovacCommand.RETURN_HOME,
+        command: RobovacCommand.WORK_MODE,
         code: 152,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
-          "BBoCCAE=": "auto",
-          "AggN": "pause",
-          "AA==": "Spot",
-          "AggG": "return",
-          "AggO": "Nosweep",
-          "AggB": "Vacuum and Mop",
+          "BBoCCAE=": WorkMode.AUTO,
+          "AggN": WorkMode.PAUSE,
+          "AA==": WorkMode.SPOT,
+          "AggG": WorkMode.RETURN_HOME,
+          "AggO": WorkMode.NO_SWEEP,
+          "AggB": WorkMode.VACUUM_AND_MOP,
         },
       },
       {
@@ -62,6 +64,17 @@ export class T2080RobovacModelDetails extends RobovacModelDetails {
           //"DAoCCAEQBzICCAFCAA==": "Temporary Return",  # This was when mid-clean, it needed to return to base to empty dust
           "DQoCCAEQCTICCAH6AQA=": "Remove Dust Mid-Clean",
           "CAoAEAIyAggB": "Error",
+        },
+      },
+      {
+        command: RobovacCommand.FAN_SPEED,
+        code: 158,
+        valueType: RobovacCommandValueType.STRING,
+        stringValues: {
+          "quiet": FanSpeed.QUIET,
+          "standard": FanSpeed.STANDARD,
+          "turbo": FanSpeed.TURBO,
+          "max": FanSpeed.MAX,
         },
       },
     ]);

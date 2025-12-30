@@ -29,8 +29,10 @@ export class RoboVac {
   dataReceivedCallback?: (status: RobovacStatus) => void;
   runningUpdateCallback?: (running: boolean) => void;
   directionUpdateCallback?: (direction: StringCommandValueMapping) => void;
+  workModeUpdateCallback?: (direction: StringCommandValueMapping) => void;
   workStatusUpdateCallback?: (workStatus: string) => void;
   returnHomeUpdateCallback?: (returnHome: boolean) => void;
+  fanSpeedUpdateCallback?: (direction: StringCommandValueMapping) => void;
   findRobotUpdateCallback?: (findRobot: boolean) => void;
   batteryLevelUpdateCallback?: (batteryLevel: number) => void;
   errorCodeUpdateCallback?: (errorCode: StringCommandValueMapping) => void;
@@ -42,8 +44,10 @@ export class RoboVac {
     log: Logger = new ConsoleLogger(),
     runningUpdateCallback?: (running: boolean) => void,
     directionUpdateCallback?: (direction: StringCommandValueMapping) => void,
+    workModeUpdateCallback?: (direction: StringCommandValueMapping) => void,
     workStatusUpdateCallback?: (workStatus: string) => void,
     returnHomeUpdateCallback?: (returnHome: boolean) => void,
+    fanSpeedUpdateCallback?: (direction: StringCommandValueMapping) => void,
     findRobotUpdateCallback?: (findRobot: boolean) => void,
     batteryLevelUpdateCallback?: (batteryLevel: number) => void,
     errorCodeUpdateCallback?: (errorCode: StringCommandValueMapping) => void,
@@ -58,8 +62,10 @@ export class RoboVac {
 
     this.runningUpdateCallback = runningUpdateCallback;
     this.directionUpdateCallback = directionUpdateCallback;
+    this.workModeUpdateCallback = workModeUpdateCallback;
     this.workStatusUpdateCallback = workStatusUpdateCallback;
     this.returnHomeUpdateCallback = returnHomeUpdateCallback;
+    this.fanSpeedUpdateCallback = fanSpeedUpdateCallback;
     this.findRobotUpdateCallback = findRobotUpdateCallback;
     this.batteryLevelUpdateCallback = batteryLevelUpdateCallback;
     this.errorCodeUpdateCallback = errorCodeUpdateCallback;
@@ -130,8 +136,10 @@ export class RoboVac {
       [RobovacCommand.DEFAULT]: undefined,
       [RobovacCommand.RUNNING]: undefined,
       [RobovacCommand.DIRECTION]: undefined,
+      [RobovacCommand.WORK_MODE]: undefined,
       [RobovacCommand.WORK_STATUS]: undefined,
       [RobovacCommand.RETURN_HOME]: undefined,
+      [RobovacCommand.FAN_SPEED]: undefined,
       [RobovacCommand.FIND_ROBOT]: undefined,
       [RobovacCommand.BATTERY_LEVEL]: undefined,
       [RobovacCommand.ERROR]: undefined,
@@ -344,24 +352,44 @@ export class RoboVac {
     return direction;
   }
 
+  async getWorkMode(raceStatus?: RaceStatus): Promise<StringCommandValueMapping | undefined> {
+    const robovac_status = await this.getStatus();
+    const work_mode = <StringCommandValueMapping | undefined>robovac_status[RobovacCommand.WORK_MODE];
+    if (raceStatus && !raceStatus.isRunning() && this.workModeUpdateCallback && work_mode) {
+      this.workModeUpdateCallback(work_mode);
+      this.log.info(`getWorkMode was late to the party [race id: ${raceStatus.raceId}].`);
+    }
+    return work_mode;
+  }
+
   async getWorkStatus(raceStatus?: RaceStatus): Promise<string | undefined> {
     const robovac_status = await this.getStatus();
     const work_status = <string | undefined>robovac_status[RobovacCommand.WORK_STATUS];
     if (raceStatus && !raceStatus.isRunning() && this.workStatusUpdateCallback && work_status) {
       this.workStatusUpdateCallback(work_status);
-      this.log.info(`getRunning was late to the party [race id: ${raceStatus.raceId}].`);
+      this.log.info(`getWorkStatus was late to the party [race id: ${raceStatus.raceId}].`);
     }
     return work_status;
   }
 
-  async getGoHome(raceStatus?: RaceStatus): Promise<boolean | undefined> {
+  async getReturnHome(raceStatus?: RaceStatus): Promise<boolean | undefined> {
     const robovac_status = await this.getStatus();
     const return_home = <boolean | undefined>robovac_status[RobovacCommand.RETURN_HOME];
     if (raceStatus && !raceStatus.isRunning() && this.returnHomeUpdateCallback && return_home) {
       this.returnHomeUpdateCallback(return_home);
-      this.log.info(`getRunning was late to the party [race id: ${raceStatus.raceId}].`);
+      this.log.info(`getReturnHome was late to the party [race id: ${raceStatus.raceId}].`);
     }
     return return_home;
+  }
+
+  async getFanSpeed(raceStatus?: RaceStatus): Promise<StringCommandValueMapping | undefined> {
+    const robovac_status = await this.getStatus();
+    const fan_speed = <StringCommandValueMapping | undefined>robovac_status[RobovacCommand.FAN_SPEED];
+    if (raceStatus && !raceStatus.isRunning() && this.fanSpeedUpdateCallback && fan_speed) {
+      this.fanSpeedUpdateCallback(fan_speed);
+      this.log.info(`getFanSpeed was late to the party [race id: ${raceStatus.raceId}].`);
+    }
+    return fan_speed;
   }
 
   async getFindRobot(raceStatus?: RaceStatus): Promise<boolean | undefined> {
@@ -402,11 +430,15 @@ export class RoboVac {
     return this.lastStatusValid ? (this.lastStatus[RobovacCommand.DIRECTION] as StringCommandValueMapping | undefined) : undefined;
   }
 
+  getWorkModeCached(): StringCommandValueMapping | undefined {
+    return this.lastStatusValid ? (this.lastStatus[RobovacCommand.WORK_MODE] as StringCommandValueMapping | undefined) : undefined;
+  }
+
   getWorkStatusCached(): string | undefined {
     return this.lastStatusValid ? <string>this.lastStatus[RobovacCommand.WORK_STATUS] : undefined;
   }
 
-  getGoHomeCached(): boolean | undefined {
+  getReturnHomeCached(): boolean | undefined {
     return this.lastStatusValid ? (this.lastStatus[RobovacCommand.RETURN_HOME] as boolean | undefined) : undefined;
   }
 

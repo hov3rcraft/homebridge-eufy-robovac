@@ -1,4 +1,6 @@
+import { FanSpeed } from "../fan-speed";
 import { RobovacCommand, RobovacCommandValueType } from "../robovac-command";
+import { WorkMode } from "../work-mode";
 import { ROBOVAC_COMMAND_DEFAULTS } from "./default-robovac-model-details";
 import { RobovacModelDetails } from "./robovac-model-details";
 
@@ -7,15 +9,15 @@ export class T2277RobovacModelDetails extends RobovacModelDetails {
     super(modelId, modelName, [
       ROBOVAC_COMMAND_DEFAULTS[RobovacCommand.DEFAULT],
       {
-        command: RobovacCommand.RUNNING,
+        command: RobovacCommand.WORK_MODE,
         code: 152,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
-          "AA==": "standby",
-          "AggN": "pause",
-          "AggG": "return",
-          "BBoCCAE=": "auto",
-          "AggO": "nosweep",
+          "AA==": WorkMode.STANDBY,
+          "AggN": WorkMode.PAUSE,
+          "AggG": WorkMode.RETURN_HOME,
+          "BBoCCAE=": WorkMode.AUTO,
+          "AggO": WorkMode.NO_SWEEP,
         },
       },
       {
@@ -44,11 +46,14 @@ export class T2277RobovacModelDetails extends RobovacModelDetails {
         },
       },
       {
-        command: RobovacCommand.RETURN_HOME,
-        code: 152,
+        command: RobovacCommand.FAN_SPEED,
+        code: 158,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
-          "AggG": "return",
+          "quiet": FanSpeed.QUIET,
+          "standard": FanSpeed.STANDARD,
+          "turbo": FanSpeed.TURBO,
+          "max": FanSpeed.MAX,
         },
       },
       {

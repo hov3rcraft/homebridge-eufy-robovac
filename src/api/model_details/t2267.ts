@@ -1,5 +1,6 @@
 import { DeviceError } from "../device-errors";
 import { Direction } from "../direction";
+import { FanSpeed } from "../fan-speed";
 import { RobovacCommand, RobovacCommandValueType } from "../robovac-command";
 import { ROBOVAC_COMMAND_DEFAULTS } from "./default-robovac-model-details";
 import { RobovacModelDetails } from "./robovac-model-details";
@@ -45,6 +46,18 @@ export class T2267RobovacModelDetails extends RobovacModelDetails {
           "BhADGgIIAQ==": "unknown",
           "AA==": "unknown",
           "AhAB": "unknown",
+        },
+      },
+      {
+        command: RobovacCommand.FAN_SPEED,
+        code: 158,
+        valueType: RobovacCommandValueType.STRING,
+        stringValues: {
+          "quiet": FanSpeed.QUIET,
+          "standard": FanSpeed.STANDARD,
+          "turbo": FanSpeed.TURBO,
+          "max": FanSpeed.MAX,
+          "boost_iq": FanSpeed.BOOST_IQ,
         },
       },
       {

@@ -1,6 +1,8 @@
 import { DeviceError } from "../device-errors";
 import { Direction } from "../direction";
+import { FanSpeed } from "../fan-speed";
 import { RobovacCommand, RobovacCommandSpec, RobovacCommandValueType } from "../robovac-command";
+import { WorkMode } from "../work-mode";
 import { RobovacModelDetails } from "./robovac-model-details";
 
 const ROBOVAC_COMMAND_DEFAULTS_ARRAY: RobovacCommandSpec[] = [
@@ -26,6 +28,18 @@ const ROBOVAC_COMMAND_DEFAULTS_ARRAY: RobovacCommandSpec[] = [
     },
   },
   {
+    command: RobovacCommand.WORK_MODE,
+    code: 5,
+    valueType: RobovacCommandValueType.STRING,
+    stringValues: {
+      "Auto": WorkMode.AUTO,
+      "Small_room": WorkMode.SMALL_ROOM,
+      "Spot": WorkMode.SPOT,
+      "Edge": WorkMode.Edge,
+      "Nosweep": WorkMode.NO_SWEEP,
+    },
+  },
+  {
     command: RobovacCommand.WORK_STATUS,
     code: 15,
     valueType: RobovacCommandValueType.STRING,
@@ -43,6 +57,17 @@ const ROBOVAC_COMMAND_DEFAULTS_ARRAY: RobovacCommandSpec[] = [
     command: RobovacCommand.RETURN_HOME,
     code: 101,
     valueType: RobovacCommandValueType.BOOLEAN,
+  },
+  {
+    command: RobovacCommand.FAN_SPEED,
+    code: 102,
+    valueType: RobovacCommandValueType.STRING,
+    stringValues: {
+      "Standard": FanSpeed.STANDARD,
+      "Boost_IQ": FanSpeed.BOOST_IQ,
+      "No_suction": FanSpeed.NO_SUCTION,
+      "Max": FanSpeed.MAX,
+    },
   },
   {
     command: RobovacCommand.FIND_ROBOT,

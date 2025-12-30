@@ -3,7 +3,7 @@ import { ConsoleLogger, Logger } from "../console-logger";
 import TuyAPI from "tuyapi";
 import { RobovacModelDetails } from "./model_details/robovac-model-details";
 import { createModelDetailsFromModelId } from "./model_details/supported-models";
-import { RobovacCommand, RobovacCommandValueType, StringCommandValueMapping } from "./robovac-command";
+import { RobovacCommand, RobovacCommandValueType, StringCommandValueMapping, ValueNotSupportedError } from "./robovac-command";
 import { RaceStatus } from "../race-status";
 
 interface RobovacResponse {
@@ -442,6 +442,10 @@ export class RoboVac {
     return this.lastStatusValid ? (this.lastStatus[RobovacCommand.RETURN_HOME] as boolean | undefined) : undefined;
   }
 
+  getFanSpeedCached(): StringCommandValueMapping | undefined {
+    return this.lastStatusValid ? (this.lastStatus[RobovacCommand.FAN_SPEED] as StringCommandValueMapping | undefined) : undefined;
+  }
+
   getFindRobotCached(): boolean | undefined {
     return this.lastStatusValid ? (this.lastStatus[RobovacCommand.FIND_ROBOT] as boolean | undefined) : undefined;
   }
@@ -462,14 +466,34 @@ export class RoboVac {
     const stringValues = this.modelDetails.getCommandSpecByCommand(RobovacCommand.DIRECTION)?.stringValues as Record<string, StringCommandValueMapping>;
     const entry = Object.entries(stringValues).find(([, value]) => value.id === newValue.id);
     if (!entry) {
-      throw new Error(`direction value '${JSON.stringify(newValue)}' is invalid for this device model.`);
+      throw new ValueNotSupportedError(newValue, RobovacCommand.DIRECTION, this.modelDetails.modelId);
     }
 
     return this.set(RobovacCommand.DIRECTION, entry[0]);
   }
 
+  async setWorkMode(newValue: StringCommandValueMapping) {
+    const stringValues = this.modelDetails.getCommandSpecByCommand(RobovacCommand.WORK_MODE)?.stringValues as Record<string, StringCommandValueMapping>;
+    const entry = Object.entries(stringValues).find(([, value]) => value.id === newValue.id);
+    if (!entry) {
+      throw new ValueNotSupportedError(newValue, RobovacCommand.WORK_MODE, this.modelDetails.modelId);
+    }
+
+    return this.set(RobovacCommand.WORK_MODE, entry[0]);
+  }
+
   async setGoHome(newValue: boolean) {
     return this.set(RobovacCommand.RETURN_HOME, newValue);
+  }
+
+  async setFanSpeed(newValue: StringCommandValueMapping) {
+    const stringValues = this.modelDetails.getCommandSpecByCommand(RobovacCommand.FAN_SPEED)?.stringValues as Record<string, StringCommandValueMapping>;
+    const entry = Object.entries(stringValues).find(([, value]) => value.id === newValue.id);
+    if (!entry) {
+      throw new ValueNotSupportedError(newValue, RobovacCommand.FAN_SPEED, this.modelDetails.modelId);
+    }
+
+    return this.set(RobovacCommand.FAN_SPEED, entry[0]);
   }
 
   async setFindRobot(newValue: boolean) {

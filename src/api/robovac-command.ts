@@ -31,3 +31,28 @@ export interface StringCommandValueMapping {
   id: number;
   friendly_message: string;
 }
+
+export class CommandNotSupportedError extends Error {
+  constructor(robovac_command: RobovacCommand, model_id?: string) {
+    super(`Command ${robovac_command} is not supported for ${model_id ? `RoboVac model ${model_id}` : `this model`}.`); // Pass the message to the parent Error class
+    this.name = "CommandNotSupportedError"; // Set the error name
+
+    // Ensure the prototype chain is correctly set for instanceof checks
+    Object.setPrototypeOf(this, CommandNotSupportedError.prototype);
+  }
+}
+
+export class ValueNotSupportedError extends Error {
+  // TODO remove string from here
+  constructor(value: boolean | number | string | StringCommandValueMapping | undefined, robovac_command: RobovacCommand, model_id?: string) {
+    super(
+      `Value ${typeof value === "object" ? value.friendly_message : JSON.stringify(value)} for command ${robovac_command} is not supported for ${
+        model_id ? `RoboVac model ${model_id}` : `this model`
+      }.`
+    ); // Pass the message to the parent Error class
+    this.name = "ValueNotSupportedError"; // Set the error name
+
+    // Ensure the prototype chain is correctly set for instanceof checks
+    Object.setPrototypeOf(this, ValueNotSupportedError.prototype);
+  }
+}

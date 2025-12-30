@@ -4,10 +4,9 @@ import { EufyRobovacPlatform } from "./platform";
 import { RoboVac, RobovacStatus } from "./api/robovac-api";
 import { Logger } from "./console-logger";
 import { RobovacCommand, StringCommandValueMapping } from "./api/robovac-command";
-import { error } from "node:console";
 import { DeviceError } from "./api/device-errors";
 import { RaceStatus } from "./race-status";
-import { PromiseTimeoutException } from "./promise-timeout-exception";
+import { PromiseTimeoutError } from "./promise-timeout-error";
 
 export class EufyRobovacAccessory {
   private readonly platform: EufyRobovacPlatform;
@@ -128,7 +127,7 @@ export class EufyRobovacAccessory {
         new Promise<undefined>((resolve, reject) => {
           setTimeout(() => {
             raceStatus.setRaceOver();
-            reject(new PromiseTimeoutException(this.callbackTimeout));
+            reject(new PromiseTimeoutError(this.callbackTimeout));
           }, this.callbackTimeout);
         }),
       ]);
@@ -138,7 +137,7 @@ export class EufyRobovacAccessory {
       }
       return running;
     } catch (error) {
-      if (error instanceof PromiseTimeoutException) {
+      if (error instanceof PromiseTimeoutError) {
         this.log.debug(`${this.name} lost its promise race for getRunning(). [race id: ${raceStatus.raceId}]`);
       } else {
         this.log.error(`An error occured during getRunning() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
@@ -158,7 +157,7 @@ export class EufyRobovacAccessory {
         new Promise<undefined>((resolve, reject) => {
           setTimeout(() => {
             raceStatus.setRaceOver();
-            reject(new PromiseTimeoutException(this.callbackTimeout));
+            reject(new PromiseTimeoutError(this.callbackTimeout));
           }, this.callbackTimeout);
         }),
       ]);
@@ -168,7 +167,7 @@ export class EufyRobovacAccessory {
       }
       return find_robot;
     } catch (error) {
-      if (error instanceof PromiseTimeoutException) {
+      if (error instanceof PromiseTimeoutError) {
         this.log.debug(`${this.name} lost its promise race for getFindRobot(). [race id: ${raceStatus.raceId}]`);
       } else {
         this.log.error(`An error occured during getFindRobot() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
@@ -188,7 +187,7 @@ export class EufyRobovacAccessory {
         new Promise<undefined>((resolve, reject) => {
           setTimeout(() => {
             raceStatus.setRaceOver();
-            reject(new PromiseTimeoutException(this.callbackTimeout));
+            reject(new PromiseTimeoutError(this.callbackTimeout));
           }, this.callbackTimeout);
         }),
       ]);
@@ -198,7 +197,7 @@ export class EufyRobovacAccessory {
       }
       return battery_level <= this.lowBatteryThreshold;
     } catch (error) {
-      if (error instanceof PromiseTimeoutException) {
+      if (error instanceof PromiseTimeoutError) {
         this.log.debug(`${this.name} lost its promise race for getLowBattery(). [race id: ${raceStatus.raceId}]`);
       } else {
         this.log.error(`An error occured during getLowBattery() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
@@ -218,7 +217,7 @@ export class EufyRobovacAccessory {
         new Promise<undefined>((resolve, reject) => {
           setTimeout(() => {
             raceStatus.setRaceOver();
-            reject(new PromiseTimeoutException(this.callbackTimeout));
+            reject(new PromiseTimeoutError(this.callbackTimeout));
           }, this.callbackTimeout);
         }),
       ]);
@@ -228,7 +227,7 @@ export class EufyRobovacAccessory {
       }
       return battery_level;
     } catch (error) {
-      if (error instanceof PromiseTimeoutException) {
+      if (error instanceof PromiseTimeoutError) {
         this.log.debug(`${this.name} lost its promise race for getBatteryLevel(). [race id: ${raceStatus.raceId}]`);
       } else {
         this.log.error(`An error occured during getBatteryLevel() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
@@ -248,7 +247,7 @@ export class EufyRobovacAccessory {
         new Promise<undefined>((resolve, reject) => {
           setTimeout(() => {
             raceStatus.setRaceOver();
-            reject(new PromiseTimeoutException(this.callbackTimeout));
+            reject(new PromiseTimeoutError(this.callbackTimeout));
           }, this.callbackTimeout);
         }),
       ]);
@@ -258,7 +257,7 @@ export class EufyRobovacAccessory {
       }
       return this.workStatusToChargingState(work_status);
     } catch (error) {
-      if (error instanceof PromiseTimeoutException) {
+      if (error instanceof PromiseTimeoutError) {
         this.log.debug(`${this.name} lost its promise race for getCharging(). [race id: ${raceStatus.raceId}]`);
       } else {
         this.log.error(`An error occured during getCharging() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
@@ -277,13 +276,13 @@ export class EufyRobovacAccessory {
         new Promise<undefined>((resolve, reject) => {
           setTimeout(() => {
             raceStatus.setRaceOver();
-            reject(new PromiseTimeoutException(this.callbackTimeout));
+            reject(new PromiseTimeoutError(this.callbackTimeout));
           }, this.callbackTimeout);
         }),
       ]);
       return !(device_error === undefined || device_error.id === DeviceError.NO_ERROR.id);
     } catch (error) {
-      if (error instanceof PromiseTimeoutException) {
+      if (error instanceof PromiseTimeoutError) {
         this.log.debug(`${this.name} lost its promise race for getErrorStatus(). [race id: ${raceStatus.raceId}]`);
       } else {
         this.log.error(`An error occured during getErrorStatus() for ${this.name}. [race id: ${raceStatus.raceId}]`, error);

@@ -164,7 +164,7 @@ export class RoboVac {
               this.log.warn(`Received unexpected STRING value for command ${commandSpec.command}:`, dps_value);
             }
             if (commandSpec.stringValues) {
-              this.lastStatus[commandSpec.command] = commandSpec.stringValues[dps_value] ?? dps_value;
+              this.lastStatus[commandSpec.command] = commandSpec.stringValues[dps_value.toLowerCase()] ?? dps_value;
             } else {
               this.lastStatus[commandSpec.command] = dps_value;
             }

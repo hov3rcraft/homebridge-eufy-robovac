@@ -13,7 +13,13 @@ export abstract class RobovacModelDetails {
     this.commandSpecsByCommand = {};
     this.commandSpecsByCode = {};
 
-    for (const cmd of commands) {
+    for (const originalCmd of commands) {
+      // convert all keys to lowercase for case-insensitive matching
+      const cmd: RobovacCommandSpec = {
+        ...originalCmd,
+        stringValues: originalCmd.stringValues ? Object.fromEntries(Object.entries(originalCmd.stringValues).map(([k, v]) => [k.toLowerCase(), v])) : undefined,
+      };
+
       const existingByCommand = this.commandSpecsByCommand[cmd.command];
       if (existingByCommand) {
         throw new Error(

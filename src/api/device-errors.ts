@@ -25,11 +25,11 @@ export const DeviceError: Record<string, StringCommandValueMapping> = {
     id: 105,
     friendly_message: "A wheel is stuck",
   },
-  S_BRUSH_STUCK: {
+  SIDE_BRUSH_STUCK: {
     id: 106,
     friendly_message: "The side brush is stuck",
   },
-  R_BRUSH_STUCK: {
+  ROLLING_BRUSH_STUCK: {
     id: 107,
     friendly_message: "The rolling brush is stuck",
   },

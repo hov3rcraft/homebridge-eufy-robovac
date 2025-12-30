@@ -92,7 +92,7 @@ const ROBOVAC_COMMAND_DEFAULTS_ARRAY: RobovacCommandSpec[] = [
       "Wheel_stuck": DeviceError.WHEEL_STUCK,
       "S_brush_stuck": DeviceError.SIDE_BRUSH_STUCK,
       "Fan_stuck": DeviceError.FAN_STUCK,
-      "R_brush_stuck": DeviceError.ROLLER_BRUSH_STUCK,
+      "R_brush_stuck": DeviceError.ROLLING_BRUSH_STUCK,
     },
   },
 ];

@@ -123,6 +123,8 @@ export class RoboVac {
         this.dataReceived(data);
         if (this.dataReceivedCallback) {
           this.dataReceivedCallback(data);
+          this.lastStatusUpdate = new Date();
+          this.lastStatusValid = true;
         }
       }
     });
@@ -183,9 +185,6 @@ export class RoboVac {
         }
       }
     }
-
-    this.lastStatusUpdate = new Date();
-    this.lastStatusValid = true;
   }
 
   async connect(): Promise<void> {
@@ -238,6 +237,8 @@ export class RoboVac {
 
       const schema = await this.api.get({ schema: true });
       this.dataReceived(schema as RobovacResponse);
+      this.lastStatusUpdate = new Date();
+      this.lastStatusValid = true;
       this.ongoingStatusUpdate = undefined;
       this.log.debug("Status update retrieved.");
       return this.lastStatus;
@@ -257,26 +258,30 @@ export class RoboVac {
 
     for (const [dps_code, dps_value] of Object.entries(statusResponse.dps)) {
       const commandSpec = this.modelDetails.getCommandSpecByCode(Number(dps_code));
-      if (commandSpec) {
-        if (first) {
-          formattedStatus += `--- Known Codes ---\n`;
-          first = false;
-        }
-        let friendlyValue: string | undefined = undefined;
-        if (commandSpec.valueType === RobovacCommandValueType.STRING && commandSpec.stringValues) {
-          // TODO remove this check
-          const fv = commandSpec.stringValues[dps_value];
-          if (typeof fv === "string") {
-            friendlyValue = fv;
-          } else if (fv !== undefined) {
-            friendlyValue = fv.friendly_message;
-          }
-        }
-
-        formattedStatus += `- ${commandSpec.command}: ${friendlyValue ?? JSON.stringify(dps_value)}\n`;
-      } else {
+      if (!commandSpec) {
         unknowns.push([dps_code, dps_value]);
+        continue;
       }
+
+      let friendlyValue: string | undefined = undefined;
+      if (commandSpec.valueType === RobovacCommandValueType.STRING && commandSpec.stringValues) {
+        // TODO remove this check
+        const fv = commandSpec.stringValues[dps_value.toLowerCase()];
+        if (fv === undefined) {
+          unknowns.push([dps_code, dps_value]);
+          continue;
+        } else if (typeof fv === "string") {
+          friendlyValue = fv;
+        } else {
+          friendlyValue = fv.friendly_message;
+        }
+      }
+
+      if (first) {
+        formattedStatus += `--- Known Codes ---\n`;
+        first = false;
+      }
+      formattedStatus += `- ${commandSpec.command}: ${friendlyValue ?? JSON.stringify(dps_value)}\n`;
     }
 
     if (unknowns.length > 0) {

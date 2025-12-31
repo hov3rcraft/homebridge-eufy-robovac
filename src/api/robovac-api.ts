@@ -11,8 +11,7 @@ interface RobovacResponse {
   dps: Record<string, any>;
 }
 
-export type RobovacStatus = Record<RobovacCommand, boolean | number | string | StringCommandValueMapping | undefined>; // TODO remove string from here
-
+export type RobovacStatus = Record<RobovacCommand, boolean | number | StringCommandValueMapping | undefined>;
 export class RoboVac {
   api: TuyAPI;
   directConnect: boolean;
@@ -30,7 +29,7 @@ export class RoboVac {
   runningUpdateCallback?: (running: boolean) => void;
   directionUpdateCallback?: (direction: StringCommandValueMapping) => void;
   workModeUpdateCallback?: (direction: StringCommandValueMapping) => void;
-  workStatusUpdateCallback?: (workStatus: string) => void;
+  workStatusUpdateCallback?: (workStatus: StringCommandValueMapping) => void;
   returnHomeUpdateCallback?: (returnHome: boolean) => void;
   fanSpeedUpdateCallback?: (direction: StringCommandValueMapping) => void;
   findRobotUpdateCallback?: (findRobot: boolean) => void;
@@ -45,7 +44,7 @@ export class RoboVac {
     runningUpdateCallback?: (running: boolean) => void,
     directionUpdateCallback?: (direction: StringCommandValueMapping) => void,
     workModeUpdateCallback?: (direction: StringCommandValueMapping) => void,
-    workStatusUpdateCallback?: (workStatus: string) => void,
+    workStatusUpdateCallback?: (workStatus: StringCommandValueMapping) => void,
     returnHomeUpdateCallback?: (returnHome: boolean) => void,
     fanSpeedUpdateCallback?: (direction: StringCommandValueMapping) => void,
     findRobotUpdateCallback?: (findRobot: boolean) => void,
@@ -145,6 +144,7 @@ export class RoboVac {
       [RobovacCommand.FIND_ROBOT]: undefined,
       [RobovacCommand.BATTERY_LEVEL]: undefined,
       [RobovacCommand.ERROR]: undefined,
+      [RobovacCommand.SPECIAL_COMMAND]: undefined,
     };
     this.lastStatusUpdate = new Date(0);
     this.lastStatusValid = false;
@@ -265,13 +265,10 @@ export class RoboVac {
 
       let friendlyValue: string | undefined = undefined;
       if (commandSpec.valueType === RobovacCommandValueType.STRING && commandSpec.stringValues) {
-        // TODO remove this check
         const fv = commandSpec.stringValues[dps_value.toLowerCase()];
         if (fv === undefined) {
           unknowns.push([dps_code, dps_value]);
           continue;
-        } else if (typeof fv === "string") {
-          friendlyValue = fv;
         } else {
           friendlyValue = fv.friendly_message;
         }
@@ -367,9 +364,9 @@ export class RoboVac {
     return work_mode;
   }
 
-  async getWorkStatus(raceStatus?: RaceStatus): Promise<string | undefined> {
+  async getWorkStatus(raceStatus?: RaceStatus): Promise<StringCommandValueMapping | undefined> {
     const robovac_status = await this.getStatus();
-    const work_status = <string | undefined>robovac_status[RobovacCommand.WORK_STATUS];
+    const work_status = <StringCommandValueMapping | undefined>robovac_status[RobovacCommand.WORK_STATUS];
     if (raceStatus && !raceStatus.isRunning() && this.workStatusUpdateCallback && work_status) {
       this.workStatusUpdateCallback(work_status);
       this.log.info(`getWorkStatus was late to the party [race id: ${raceStatus.raceId}].`);
@@ -439,8 +436,8 @@ export class RoboVac {
     return this.lastStatusValid ? (this.lastStatus[RobovacCommand.WORK_MODE] as StringCommandValueMapping | undefined) : undefined;
   }
 
-  getWorkStatusCached(): string | undefined {
-    return this.lastStatusValid ? <string>this.lastStatus[RobovacCommand.WORK_STATUS] : undefined;
+  getWorkStatusCached(): StringCommandValueMapping | undefined {
+    return this.lastStatusValid ? <StringCommandValueMapping>this.lastStatus[RobovacCommand.WORK_STATUS] : undefined;
   }
 
   getReturnHomeCached(): boolean | undefined {

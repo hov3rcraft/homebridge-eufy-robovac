@@ -7,6 +7,7 @@ import { RobovacCommand, StringCommandValueMapping } from "./api/robovac-command
 import { DeviceError } from "./api/device-errors";
 import { RaceStatus } from "./race-status";
 import { PromiseTimeoutError } from "./promise-timeout-error";
+import { WorkStatus } from "./api/work-status";
 
 export class EufyRobovacAccessory {
   private readonly platform: EufyRobovacPlatform;
@@ -240,7 +241,7 @@ export class EufyRobovacAccessory {
     const raceStatus = new RaceStatus();
     this.log.debug(`getCharging for ${this.name}. [race id: ${raceStatus.raceId}]`);
 
-    let work_status: string | undefined = undefined;
+    let work_status: StringCommandValueMapping | undefined = undefined;
     try {
       work_status = await Promise.race([
         this.roboVac.getWorkStatus(raceStatus),
@@ -354,9 +355,9 @@ export class EufyRobovacAccessory {
     }
   }
 
-  private updateWorkStatus(work_status: string) {
+  private updateWorkStatus(work_status: StringCommandValueMapping) {
     if (this.batteryService) {
-      this.log.debug(`updating ${RobovacCommand.WORK_STATUS} for ${this.name} to ${work_status}`);
+      this.log.debug(`updating ${RobovacCommand.WORK_STATUS} for ${this.name} to "${work_status.friendly_message}"`);
       this.batteryService.updateCharacteristic(this.platform.Characteristic.ChargingState, this.workStatusToChargingState(work_status));
     }
   }
@@ -389,7 +390,7 @@ export class EufyRobovacAccessory {
         this.updateBatteryLevel(status_battery_level);
         counter++;
       }
-      const status_work_status = status[RobovacCommand.WORK_STATUS] as string | undefined;
+      const status_work_status = status[RobovacCommand.WORK_STATUS] as StringCommandValueMapping | undefined;
       if (status_work_status !== undefined) {
         this.updateWorkStatus(status_work_status);
         counter++;
@@ -403,9 +404,8 @@ export class EufyRobovacAccessory {
     this.log.debug(`updateCharacteristics for ${this.name} complete - updated ${counter} characteristics.`);
   }
 
-  workStatusToChargingState(workStatus: string): number {
-    // TODO replace with robust check
-    if (workStatus === "Charging" || workStatus === "Charging completed") {
+  workStatusToChargingState(workStatus: StringCommandValueMapping): number {
+    if (workStatus.id === WorkStatus.CHARGING.id || workStatus.id === WorkStatus.CHARGING_COMPLETED.id) {
       return this.platform.Characteristic.ChargingState.CHARGING;
     } else {
       return this.platform.Characteristic.ChargingState.NOT_CHARGING;

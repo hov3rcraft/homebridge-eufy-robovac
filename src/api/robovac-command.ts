@@ -12,13 +12,14 @@ export enum RobovacCommand {
   FIND_ROBOT = "Find Robot",
   BATTERY_LEVEL = "Battery Level",
   ERROR = "Error",
+  SPECIAL_COMMAND = "Special Command",
 }
 
 export interface RobovacCommandSpec {
   command: RobovacCommand;
   code: number;
   valueType: RobovacCommandValueType;
-  stringValues?: Record<string, StringCommandValueMapping | string>; // TODO remove the second string here
+  stringValues?: Record<string, StringCommandValueMapping>;
 }
 
 export enum RobovacCommandValueType {
@@ -43,8 +44,7 @@ export class CommandNotSupportedError extends Error {
 }
 
 export class ValueNotSupportedError extends Error {
-  // TODO remove string from here
-  constructor(value: boolean | number | string | StringCommandValueMapping | undefined, robovac_command: RobovacCommand, model_id?: string) {
+  constructor(value: boolean | number | StringCommandValueMapping | undefined, robovac_command: RobovacCommand, model_id?: string) {
     super(
       `Value ${typeof value === "object" ? value.friendly_message : JSON.stringify(value)} for command ${robovac_command} is not supported for ${
         model_id ? `RoboVac model ${model_id}` : `this model`

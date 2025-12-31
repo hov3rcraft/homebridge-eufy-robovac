@@ -3,6 +3,7 @@ import { Direction } from "../direction";
 import { FanSpeed } from "../fan-speed";
 import { RobovacCommand, RobovacCommandSpec, RobovacCommandValueType } from "../robovac-command";
 import { WorkMode } from "../work-mode";
+import { WorkStatus } from "../work-status";
 import { RobovacModelDetails } from "./robovac-model-details";
 
 const ROBOVAC_COMMAND_DEFAULTS_ARRAY: RobovacCommandSpec[] = [
@@ -44,13 +45,13 @@ const ROBOVAC_COMMAND_DEFAULTS_ARRAY: RobovacCommandSpec[] = [
     code: 15,
     valueType: RobovacCommandValueType.STRING,
     stringValues: {
-      "running": "Running",
-      "paused": "Paused",
-      "standby": "Standby",
-      "sleeping": "Sleeping",
-      "charging": "Charging",
-      "completed": "Charging completed",
-      "recharge": "Recharge needed",
+      "Running": WorkStatus.RUNNING,
+      "paused": WorkStatus.PAUSED,
+      "standby": WorkStatus.STANDBY,
+      "Sleeping": WorkStatus.SLEEPING,
+      "Charging": WorkStatus.CHARGING,
+      "completed": WorkStatus.CHARGING_COMPLETED,
+      "Recharge": WorkStatus.RECHARGE_NEEDED,
     },
   },
   {

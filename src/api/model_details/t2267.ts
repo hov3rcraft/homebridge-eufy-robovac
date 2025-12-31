@@ -2,6 +2,7 @@ import { DeviceError } from "../device-errors";
 import { Direction } from "../direction";
 import { FanSpeed } from "../fan-speed";
 import { RobovacCommand, RobovacCommandValueType } from "../robovac-command";
+import { WorkStatus } from "../work-status";
 import { ROBOVAC_COMMAND_DEFAULTS } from "./default-robovac-model-details";
 import { RobovacModelDetails } from "./robovac-model-details";
 
@@ -31,21 +32,21 @@ export class T2267RobovacModelDetails extends RobovacModelDetails {
         code: 153,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
-          "BgoAEAUyAA===": "unknown",
-          "BgoAEAVSAA===": "unknown",
-          "CAoAEAUyAggB": "unknown",
-          "CAoCCAEQBTIA": "unknown",
-          "CAoCCAEQBVIA": "unknown",
-          "CgoCCAEQBTICCAE=": "unknown",
-          "CAoCCAIQBTIA": "unknown",
-          "CAoCCAIQBVIA": "unknown",
-          "CgoCCAIQBTICCAE=": "unknown",
-          "BAoAEAY=": "unknown",
-          "BBAHQgA=": "unknown",
-          "BBADGgA=": "unknown",
-          "BhADGgIIAQ==": "unknown",
-          "AA==": "unknown",
-          "AhAB": "unknown",
+          "BgoAEAUyAA===": WorkStatus.UNKNOWN,
+          "BgoAEAVSAA===": WorkStatus.UNKNOWN,
+          "CAoAEAUyAggB": WorkStatus.UNKNOWN,
+          "CAoCCAEQBTIA": WorkStatus.UNKNOWN,
+          "CAoCCAEQBVIA": WorkStatus.UNKNOWN,
+          "CgoCCAEQBTICCAE=": WorkStatus.UNKNOWN,
+          "CAoCCAIQBTIA": WorkStatus.UNKNOWN,
+          "CAoCCAIQBVIA": WorkStatus.UNKNOWN,
+          "CgoCCAIQBTICCAE=": WorkStatus.UNKNOWN,
+          "BAoAEAY=": WorkStatus.UNKNOWN,
+          "BBAHQgA=": WorkStatus.UNKNOWN,
+          "BBADGgA=": WorkStatus.UNKNOWN,
+          "BhADGgIIAQ==": WorkStatus.UNKNOWN,
+          "AA==": WorkStatus.UNKNOWN,
+          "AhAB": WorkStatus.UNKNOWN,
         },
       },
       {

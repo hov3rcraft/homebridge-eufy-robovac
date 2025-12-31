@@ -3,6 +3,7 @@ import { RobovacModelDetails } from "./robovac-model-details";
 import { ROBOVAC_COMMAND_DEFAULTS } from "./default-robovac-model-details";
 import { WorkMode } from "../work-mode";
 import { FanSpeed } from "../fan-speed";
+import { SpecialCommand } from "../special-command";
 
 export class T2320RobovacModelDetails extends RobovacModelDetails {
   constructor(modelId: string, modelName: string) {
@@ -22,19 +23,12 @@ export class T2320RobovacModelDetails extends RobovacModelDetails {
         },
       },
       {
-        command: RobovacCommand.RETURN_HOME,
-        code: 152,
+        command: RobovacCommand.SPECIAL_COMMAND,
+        code: 153,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
-          "return_home": "return_home",
-        },
-      },
-      {
-        command: RobovacCommand.FIND_ROBOT,
-        code: 152,
-        valueType: RobovacCommandValueType.STRING,
-        stringValues: {
-          "locate": "locate",
+          "return_home": SpecialCommand.RETURN_HOME,
+          "locate": SpecialCommand.FIND_ROBOT,
         },
       },
       {

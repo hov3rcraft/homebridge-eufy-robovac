@@ -1,6 +1,8 @@
 import { DeviceError } from "../device-errors";
 import { RobovacCommand, RobovacCommandValueType } from "../robovac-command";
+import { SpecialCommand } from "../special-command";
 import { WorkMode } from "../work-mode";
+import { WorkStatus } from "../work-status";
 import { ROBOVAC_COMMAND_DEFAULTS } from "./default-robovac-model-details";
 import { RobovacModelDetails } from "./robovac-model-details";
 
@@ -25,29 +27,22 @@ export class T2275RobovacModelDetails extends RobovacModelDetails {
         code: 173,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
-          "running": "Running",
-          "paused": "Paused",
-          "standby": "Standby",
-          "sleeping": "Sleeping",
-          "charging": "Charging",
-          "completed": "Charging completed",
-          "recharge": "Recharge needed",
+          "running": WorkStatus.RUNNING,
+          "paused": WorkStatus.PAUSED,
+          "standby": WorkStatus.STANDBY,
+          "sleeping": WorkStatus.SLEEPING,
+          "charging": WorkStatus.CHARGING,
+          "completed": WorkStatus.CHARGING_COMPLETED,
+          "recharge": WorkStatus.RECHARGE_NEEDED,
         },
       },
       {
-        command: RobovacCommand.RETURN_HOME,
+        command: RobovacCommand.SPECIAL_COMMAND,
         code: 153,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
-          "AggB": "return",
-        },
-      },
-      {
-        command: RobovacCommand.FIND_ROBOT,
-        code: 153,
-        valueType: RobovacCommandValueType.STRING,
-        stringValues: {
-          "AggC": "locate",
+          "AggB": SpecialCommand.RETURN_HOME,
+          "AggC": SpecialCommand.FIND_ROBOT,
         },
       },
       {

@@ -1,6 +1,7 @@
 import { FanSpeed } from "../fan-speed";
 import { RobovacCommand, RobovacCommandValueType } from "../robovac-command";
 import { WorkMode } from "../work-mode";
+import { WorkStatus } from "../work-status";
 import { ROBOVAC_COMMAND_DEFAULTS } from "./default-robovac-model-details";
 import { RobovacModelDetails } from "./robovac-model-details";
 
@@ -25,24 +26,24 @@ export class T2277RobovacModelDetails extends RobovacModelDetails {
         code: 153,
         valueType: RobovacCommandValueType.STRING,
         stringValues: {
-          "BgoAEAUyAA===": "auto",
-          "BgoAEAUyAA==": "auto",
-          "BgoAEAVSAA===": "positioning",
-          "BgoAEAVSAA==": "positioning",
-          "CAoAEAUyAggB": "Paused",
-          "AggB": "Paused",
-          "CAoCCAEQBTIA": "room",
-          "CAoCCAEQBVIA": "room_positioning",
-          "CgoCCAEQBTICCAE=": "room_pause",
-          "CAoCCAIQBTIA": "spot",
-          "CAoCCAIQBVIA": "spot_positioning",
-          "CgoCCAIQBTICCAE=": "spot_pause",
-          "BAoAEAY=": "start_manual",
-          "BBAHQgA=": "going_to_charge",
-          "BBADGgA=": "Charging",
-          "BhADGgIIAQ==": "completed",
-          "AA==": "Standby",
-          "AhAB": "Sleeping",
+          "BgoAEAUyAA===": WorkStatus.AUTO_CLEANING,
+          "BgoAEAUyAA==": WorkStatus.AUTO_CLEANING,
+          "BgoAEAVSAA===": WorkStatus.ROOM_POSITIONING,
+          "BgoAEAVSAA==": WorkStatus.ROOM_POSITIONING,
+          "CAoAEAUyAggB": WorkStatus.PAUSED,
+          "AggB": WorkStatus.PAUSED,
+          "CAoCCAEQBTIA": WorkStatus.ROOM_POSITIONING,
+          "CAoCCAEQBVIA": WorkStatus.ROOM_POSITIONING,
+          "CgoCCAEQBTICCAE=": WorkStatus.PAUSED,
+          "CAoCCAIQBTIA": WorkStatus.SPOT_POSITIONING,
+          "CAoCCAIQBVIA": WorkStatus.SPOT_POSITIONING,
+          "CgoCCAIQBTICCAE=": WorkStatus.PAUSED,
+          "BAoAEAY=": WorkStatus.MANUAL_CONTROL,
+          "BBAHQgA=": WorkStatus.RETURNING_HOME,
+          "BBADGgA=": WorkStatus.CHARGING,
+          "BhADGgIIAQ==": WorkStatus.CHARGING_COMPLETED,
+          "AA==": WorkStatus.STANDBY,
+          "AhAB": WorkStatus.SLEEPING,
         },
       },
       {
